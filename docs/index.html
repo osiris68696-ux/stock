@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ARES 股票分析（GitHub Pages 純前端版）</title>
-  <meta name="description" content="輸入股票代號，前端即時顯示價格與技術分析。純前端、不需後端、資料只存在你的瀏覽器。" />
+  <title>台美股智慧分析</title>
+  <meta name="description" content="台美股智慧分析：基本面、技術面、籌碼面整合研究。僅供研究，不構成投資建議。" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <header>
-    <h1>📈 ARES 股票分析 <span class="tag">GitHub Pages 純前端版</span></h1>
-    <p class="sub">輸入台股 / 美股代號，瀏覽器直接抓公開資料並顯示分析。
-      <strong>不需後端、不需安裝、開網址即用。僅供研究，不構成投資建議。</strong></p>
+    <h1>📈 台美股智慧分析</h1>
+    <p class="sub">基本面 × 技術面 × 籌碼面　整合研究分析（僅供研究，不構成投資建議）</p>
   </header>
 
   <main>
@@ -30,34 +29,21 @@
         <input id="qty" type="number" step="any" min="0" placeholder="股數（選填）" />
         <button id="save" class="ghost">加入我的持股</button>
       </div>
-      <p class="hint">填成本 / 股數可加做「報酬率 + 續抱 / 加碼 / 減碼 / 停利 / 停損」。
-        這些資料<strong>只存在你的瀏覽器 localStorage，不會上傳任何伺服器</strong>。</p>
       <div id="status" class="status"></div>
     </section>
 
     <section class="card">
-      <h2>⭐ 我的持股（只存在你的瀏覽器）</h2>
+      <h2>⭐ 我的持股</h2>
       <div id="holdings" class="chips"></div>
       <button id="analyzeAll" class="ghost">分析全部持股</button>
       <button id="clearAll" class="ghost danger">清空</button>
     </section>
 
     <section id="results"></section>
-
-    <section class="card note">
-      <h2>ℹ️ 這個版本能做什麼、不能做什麼</h2>
-      <p><b>純前端可執行：</b>台股 / 美股即時價格、漲跌幅、MA5/10/20/60、RSI、支撐 / 壓力、
-        台股本益比 / 殖利率 / 股價淨值比、簡化版多空研判、持股損益試算。</p>
-      <p><b>需要 Python 後端（本版暫不支援）：</b>完整 AI 決策引擎（五級買賣 / 風險等級 / 資金配置 / 風報比 /
-        估值區間）、產業趨勢引擎、雙來源價格交叉驗證、台股三大法人 / 融資券、美股機構持股 / Short Interest、
-        每日 Telegram 報告。完整分析請使用「本機 Python 版」。</p>
-      <p class="muted">資料來源：FinMind 開放 API（CORS 友善、免金鑰）。資料可能延遲或不完整，僅供研究。</p>
-    </section>
   </main>
 
   <footer>
-    <p>ARES 股票分析 · GitHub Pages 純前端版 · 資料僅供研究，<strong>不構成投資建議</strong>。
-      本頁不蒐集、不上傳任何個人資料。</p>
+    <p>資料來源：FinMind 開放 API。以上僅為資料整理與趨勢分析，不構成投資建議。</p>
   </footer>
 
   <script src="./app.js"></script>
