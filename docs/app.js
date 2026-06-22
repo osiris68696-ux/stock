@@ -438,11 +438,14 @@ let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setT
 
 /* ---------- 事件 ---------- */
 document.querySelectorAll(".feature").forEach((b) => b.addEventListener("click", () => { const t = $(b.getAttribute("data-goto")); if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); const inp = t.querySelector("input,select"); if (inp) setTimeout(() => inp.focus(), 300); } }));
-$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value, $("cost").value.trim(), $("qty").value.trim()); });
+// 股票快查（純分析，無持股成本）
+$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value); });
 $("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
-$("save").addEventListener("click", () => { const s = $("symbol").value.trim().toUpperCase(); if (!s) return; const m = $("market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });
+// 我的持股（自帶市場/代號/成本/股數）
+$("save").addEventListener("click", () => { const s = $("h-symbol").value.trim().toUpperCase(); if (!s) return; const m = $("h-market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });
+$("h-symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("save").click(); });
 $("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; analyze(s, m, h.cost, h.qty); } });
-$("analyzeAll").addEventListener("click", () => getHoldings().forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)));
+$("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { $("results").scrollIntoView({ behavior: "smooth" }); return; } list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
 $("clearAll").addEventListener("click", () => { if (confirm("清空我的持股？")) setHoldings([]); });
 
 renderHoldings();
