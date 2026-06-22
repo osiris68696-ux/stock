@@ -1,0 +1,20 @@
+# --- HTTP / 資料抓取 ---
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+feedparser>=6.0.0
+
+# --- 行情資料 ---
+yfinance>=0.2.40
+finnhub-python>=2.4.20
+
+# --- 資料處理 ---
+pandas>=2.0.0
+numpy>=1.24.0
+
+# --- 設定 / 排程 ---
+python-dotenv>=1.0.0
+schedule>=1.2.0
+
+# --- 穩定性 (Resource Guard：CPU / RAM 監控) ---
+psutil>=5.9.0
