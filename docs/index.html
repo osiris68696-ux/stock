@@ -4,18 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股智慧分析</title>
-  <meta name="description" content="台美股智慧分析：基本面、技術面、籌碼面整合研究。僅供研究，不構成投資建議。" />
+  <meta name="description" content="台美股智慧分析：基本面 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header>
-    <h1>📈 台美股智慧分析</h1>
-    <p class="sub">基本面 × 技術面 × 籌碼面　整合研究分析（僅供研究，不構成投資建議）</p>
-  </header>
+  <div class="topbar"><span class="brand">📈 台美股智慧分析</span></div>
 
   <main>
-    <section class="card">
-      <h2>🔎 查詢個股</h2>
+    <!-- Hero -->
+    <section class="hero">
+      <h1>台美股智慧分析</h1>
+      <p class="tagline">基本面 × 技術面 × 籌碼面｜投資決策輔助工具</p>
+      <div class="status-cards">
+        <div class="status"><span class="ico">🌐</span><div><b>台股 / 美股</b><small>皆支援代號查詢</small></div></div>
+        <div class="status"><span class="ico">🛢️</span><div><b>資料來源</b><small>FinMind 開放 API</small></div></div>
+        <div class="status"><span class="ico">🕹️</span><div><b>K 線圖</b><small>支援縮放與拖曳</small></div></div>
+      </div>
+    </section>
+
+    <!-- 功能入口卡片 -->
+    <section class="features">
+      <button class="feature" data-goto="query"><span class="ico">🔎</span><b>股票快查</b><small>輸入股票代號立即分析</small></button>
+      <button class="feature" data-goto="myholdings"><span class="ico">💼</span><b>我的持股</b><small>輸入成本與股數，計算損益與操作建議</small></button>
+      <button class="feature" data-goto="query"><span class="ico">📊</span><b>技術面 / K 線</b><small>查看 MA、RSI、支撐、壓力與 K 線</small></button>
+      <button class="feature" data-goto="query"><span class="ico">🧭</span><b>三大分析</b><small>基本面、技術面、籌碼面整合判斷</small></button>
+    </section>
+
+    <!-- 查詢區塊 -->
+    <section class="card" id="query">
+      <h2>🔎 股票快查</h2>
       <div class="row">
         <select id="market">
           <option value="TW">台股</option>
@@ -27,16 +44,19 @@
       <div class="row">
         <input id="cost" type="number" step="any" min="0" placeholder="持股成本（選填）" />
         <input id="qty" type="number" step="any" min="0" placeholder="股數（選填）" />
-        <button id="save" class="ghost">加入我的持股</button>
+        <button id="save" class="ghost">加入持股</button>
       </div>
-      <div id="status" class="status"></div>
+      <div id="status" class="status-line"></div>
     </section>
 
-    <section class="card">
-      <h2>⭐ 我的持股</h2>
+    <!-- 持股區塊 -->
+    <section class="card" id="myholdings">
+      <h2>💼 我的持股</h2>
       <div id="holdings" class="chips"></div>
-      <button id="analyzeAll" class="ghost">分析全部持股</button>
-      <button id="clearAll" class="ghost danger">清空</button>
+      <div class="row">
+        <button id="analyzeAll" class="ghost">持股診斷</button>
+        <button id="clearAll" class="ghost danger">清空</button>
+      </div>
     </section>
 
     <section id="results"></section>
