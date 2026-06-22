@@ -1,0 +1,13 @@
+{
+  "_note": "TaiQuant 台股量化交叉驗證設定。僅作輔助參考，不取代本系統判斷。",
+  "_how_to_configure": "TaiQuant 官方 API 端點未公開。若要啟用真實交叉驗證，請用瀏覽器開發者工具 (Network) 在 https://taiwan-equity-quant-tool.taiquant.workers.dev 查到實際 API 路徑與 JSON 欄位，填入下列 endpoint_template 與 field_map，並把 enabled 設為 true。",
+  "enabled": false,
+  "endpoint_template": "https://taiwan-equity-quant-tool.taiquant.workers.dev/api/stock/{code}",
+  "timeout": 8,
+  "field_map": {
+    "rating": "rating",
+    "score": "score",
+    "signal": "signal"
+  },
+  "max_lookups_per_run": 3
+}
