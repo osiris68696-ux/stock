@@ -38,8 +38,8 @@ body { margin: 0; color: var(--fg);
 .status .ico { font-size: 1.55rem; }
 .st-txt b { display: block; } .st-txt small { color: var(--muted); }
 
-/* 功能入口卡 (2x2 / 4 欄響應式) */
-.features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 36px 0 8px; }
+/* 功能入口卡 (響應式多欄) */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 36px 0 8px; }
 .feature { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; text-align: left; cursor: pointer; min-height: 132px;
   background: linear-gradient(180deg, var(--panel), var(--panel2)); border: 1px solid var(--line); border-radius: 18px; padding: 18px; color: var(--fg); box-shadow: var(--shadow);
   transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease; }
@@ -167,3 +167,10 @@ footer { max-width: var(--max); margin: 0 auto; padding: 22px; color: var(--mute
 /* K 線觸控：避免整頁滾動/縮放 */
 .kline-wrap canvas.kline { touch-action: none; }
 @media (max-width: 560px) { .px { font-size: 1.7rem; } .updbar { flex-direction: column; align-items: stretch; } }
+
+/* 黃金：單位、新聞外部連結 */
+.unit { color: var(--muted); font-size: .95rem; align-self: flex-end; margin-left: -6px; }
+.news-links { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 8px 0 0; }
+.news-links a { color: var(--accent); text-decoration: none; border: 1px solid var(--line2); border-radius: 999px; padding: 5px 12px; font-size: .86rem; }
+.news-links a:hover { border-color: var(--accent); background: rgba(77,163,255,.08); }
+#gold .primary-lg { max-width: 320px; }

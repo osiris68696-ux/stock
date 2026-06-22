@@ -67,12 +67,12 @@ function num(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
 function buildIndicators(bars) {
   const closes = bars.map((b) => b.c), highs = bars.map((b) => b.h), lows = bars.map((b) => b.l), vols = bars.map((b) => b.v);
   const last = closes[closes.length - 1], prev = closes.length > 1 ? closes[closes.length - 2] : null;
-  const ma20 = sma(closes, 20), ma60 = sma(closes, 60), ma5 = sma(closes, 5), ma10 = sma(closes, 10), r = rsi(closes, 14);
+  const ma20 = sma(closes, 20), ma60 = sma(closes, 60), ma5 = sma(closes, 5), ma10 = sma(closes, 10), ma200 = sma(closes, 200), r = rsi(closes, 14);
   const support = lows.length >= 5 ? Math.min(...lows.slice(-20)) : null;
   const resistance = highs.length >= 5 ? Math.max(...highs.slice(-20)) : null;
   let volRatio = null;
   if (vols.length >= 21) { const avg = vols.slice(-21, -1).reduce((a, b) => a + b, 0) / 20; if (avg) volRatio = vols[vols.length - 1] / avg; }
-  return { close: last, change_pct: prev ? (last - prev) / prev * 100 : null, ma5, ma10, ma20, ma60, rsi: r, support, resistance, volRatio, distMa20: ma20 ? (last - ma20) / ma20 * 100 : null };
+  return { close: last, change_pct: prev ? (last - prev) / prev * 100 : null, ma5, ma10, ma20, ma60, ma200, rsi: r, support, resistance, volRatio, distMa20: ma20 ? (last - ma20) / ma20 * 100 : null };
 }
 
 /* ---------- 決策 ---------- */
@@ -236,10 +236,14 @@ function drawKline(canvas, bars, view, support, resistance) {
   });
   const line = (arr, color) => { ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.beginPath(); let st = false; arr.forEach((v, i) => { if (v == null) return; const x = padL + slot * i + slot / 2, y = yP(v); if (!st) { ctx.moveTo(x, y); st = true; } else ctx.lineTo(x, y); }); ctx.stroke(); };
   line(ma5, "#4da3ff"); line(ma20, "#ffcf4d");
+  let hi = 0, lo = 0;
+  for (let i = 1; i < data.length; i++) { if (data[i].h > data[hi].h) hi = i; if (data[i].l < data[lo].l) lo = i; }
+  const mark = (idx, val, up) => { const x = padL + slot * idx + slot / 2, y = yP(val); ctx.fillStyle = up ? "#ef8a4d" : "#4dd0a0"; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 6.3); ctx.fill(); ctx.font = "10px system-ui"; ctx.textAlign = idx > data.length / 2 ? "right" : "left"; ctx.fillText((up ? "高 " : "低 ") + val.toFixed(1), idx > data.length / 2 ? x - 5 : x + 5, up ? y - 5 : y + 11); ctx.textAlign = "left"; };
+  if (data.length > 2) { mark(hi, data[hi].h, true); mark(lo, data[lo].l, false); }
 }
-function setupKline(wrap, bars, support, resistance, initial) {
+function setupKline(wrap, bars, support, resistance, initial, defaultCount) {
   const canvas = wrap.querySelector("canvas");
-  const view = { count: Math.min(60, bars.length), end: bars.length };
+  const view = { count: Math.min(defaultCount || 60, bars.length), end: bars.length };
   if (initial) { view.count = Math.min(bars.length, Math.max(10, initial.count || 60)); view.end = Math.max(view.count, Math.min(bars.length, bars.length - (initial.endOffset || 0))); }
   canvas._view = view; canvas._barsLen = bars.length;
   const clamp = () => { view.count = Math.max(10, Math.min(bars.length, Math.round(view.count))); view.end = Math.max(view.count, Math.min(bars.length, Math.round(view.end))); };
@@ -248,7 +252,7 @@ function setupKline(wrap, bars, support, resistance, initial) {
   const slot = () => (canvas.clientWidth - 62) / view.count;
   const center = () => { const r = canvas.getBoundingClientRect(); return r.left + r.width / 2; };
   const zoomAt = (clientX, factor) => { const rect = canvas.getBoundingClientRect(), W = canvas.clientWidth - 62; const frac = Math.max(0, Math.min(1, (clientX - rect.left - 8) / W)); const gb = (view.end - view.count) + frac * view.count; view.count *= factor; clamp(); view.end = Math.round(gb + (1 - frac) * view.count); redraw(); };
-  wrap.querySelectorAll("[data-kl]").forEach((btn) => btn.addEventListener("click", () => { const a = btn.getAttribute("data-kl"); if (a === "in") zoomAt(center(), 0.7); else if (a === "out") zoomAt(center(), 1.4); else if (a === "reset") { view.count = Math.min(60, bars.length); view.end = bars.length; redraw(); } else { view.count = +a; view.end = bars.length; redraw(); } }));
+  wrap.querySelectorAll("[data-kl]").forEach((btn) => btn.addEventListener("click", () => { const a = btn.getAttribute("data-kl"); if (a === "in") zoomAt(center(), 0.7); else if (a === "out") zoomAt(center(), 1.4); else if (a === "reset") { view.count = Math.min(defaultCount || 60, bars.length); view.end = bars.length; redraw(); } else if (a === "max") { view.count = bars.length; view.end = bars.length; redraw(); } else { view.count = +a; view.end = bars.length; redraw(); } }));
   canvas.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(e.clientX, e.deltaY > 0 ? 1.15 : 0.87); }, { passive: false });
   const pts = new Map();
   canvas.addEventListener("pointerdown", (e) => { try { canvas.setPointerCapture(e.pointerId); } catch {} pts.set(e.pointerId, e.clientX); canvas.style.cursor = "grabbing"; });
@@ -416,21 +420,233 @@ function renderResult(a, meta) {
   return header + hold + decision + `<div class="aspects">${fundamental}${technical}${chip}</div>` + kline + `<div class="aspects two">${buy}${nobuy}</div>` + zones + concl + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p>`;
 }
 
+/* ===================== 黃金價格分析 ===================== */
+const GOLD_API = "https://api.gold-api.com/price/XAU";   // XAU/USD 現價（免金鑰、CORS *）
+const OZ_G = 31.1034768, QIAN_G = 3.75, TAEL_G = 37.5;
+const GOLD_EXT = [
+  ["Google News：黃金價格", "https://news.google.com/search?q=%E9%BB%83%E9%87%91%E5%83%B9%E6%A0%BC&hl=zh-TW"],
+  ["Google News：XAUUSD gold price", "https://news.google.com/search?q=XAUUSD%20gold%20price&hl=en-US"],
+  ["鉅亨網：黃金", "https://www.cnyes.com/search/all?keyword=%E9%BB%83%E9%87%91"],
+  ["Yahoo 股市：黃金", "https://tw.stock.yahoo.com/quote/GC=F"],
+];
+let GOLD_TIMER = null, GOLD_AUTO = "off", GOLD_LASTPRICE = null;
+function stopGoldAuto() { if (GOLD_TIMER) { clearInterval(GOLD_TIMER); GOLD_TIMER = null; } }
+function setGoldAuto(ms) { stopGoldAuto(); if (ms > 0) GOLD_TIMER = setInterval(() => { if (!$("gold")) { stopGoldAuto(); return; } refreshGold(); }, ms); }
+window.addEventListener("beforeunload", stopGoldAuto);
+
+async function fetchGoldSpot() {
+  const r = await fetch(GOLD_API, { cache: "no-store" });
+  if (!r.ok) throw new Error("GOLD_HTTP " + r.status);
+  const j = await r.json();
+  if (j == null || j.price == null) throw new Error("GOLD_EMPTY");
+  return { price: Number(j.price), updatedAt: j.updatedAt || null };
+}
+async function fetchGoldHistory() {
+  const raw = await fmSafe("TaiwanFuturesDaily", "GDF", ago(2200));
+  if (!raw || !raw.length) return null;
+  const byDate = {};
+  for (const r of raw) { const c = num(r.close), v = num(r.volume) || 0; if (!c || c <= 0) continue; const d = r.date; if (!byDate[d] || v > byDate[d].v) byDate[d] = { date: d, o: num(r.open), h: num(r.max), l: num(r.min), c, v }; }
+  const bars = Object.values(byDate).filter((b) => b.o > 0 && b.h > 0 && b.l > 0).sort((a, b) => a.date < b.date ? -1 : 1);
+  return bars.length ? bars : null;
+}
+async function fetchUsdTwd() {
+  const d = await fmSafe("TaiwanExchangeRate", "USD", ago(20));
+  if (!d || !d.length) return null;
+  const m = d[d.length - 1], sb = num(m.spot_buy), ss = num(m.spot_sell), cb = num(m.cash_buy), cs = num(m.cash_sell);
+  if (sb && ss) return (sb + ss) / 2; if (cb && cs) return (cb + cs) / 2; return null;
+}
+async function buildGold() {
+  const spot = await fetchGoldSpot();                      // 現價必須成功；失敗則整體報錯
+  const [hist, rate] = await Promise.all([fetchGoldHistory().catch(() => null), fetchUsdTwd().catch(() => null)]);
+  const bars = hist && hist.length >= 5 ? hist : null;
+  let ind = null, rets = null, prevClose = null, change = null;
+  if (bars) {
+    ind = buildIndicators(bars);
+    const cl = bars.map((b) => b.c), ret = (n) => cl.length > n ? (cl[cl.length - 1] / cl[cl.length - 1 - n] - 1) * 100 : null;
+    rets = { m1: ret(21), m3: ret(63), y1: ret(252) };
+    prevClose = bars[bars.length - 1].c; change = (spot.price - prevClose) / prevClose * 100;
+  }
+  return { current: spot.price, updatedAt: spot.updatedAt, bars, ind, rets, rate, change, histAvailable: !!bars, lastDate: bars ? bars[bars.length - 1].date : null, rows: bars ? bars.length : 0 };
+}
+function decideGold(g) {
+  const i = g.ind; if (!i) return null;
+  const cur = g.current, { ma20, ma60, rsi: r, support: sup, resistance: res } = i;
+  const dist20 = ma20 ? (cur - ma20) / ma20 * 100 : null;
+  const aboveMa20 = ma20 && cur > ma20, aboveMa60 = ma60 && cur > ma60;
+  const overheated = r != null && r >= 70, belowMa20 = ma20 != null && cur < ma20;
+  const nearSupport = sup && cur <= sup * 1.04, nearResistance = res && cur >= res * 0.97, far = dist20 != null && dist20 > 10;
+  const trend = (aboveMa20 && aboveMa60) ? "偏多" : belowMa20 ? "偏空" : "中性";
+  const position = belowMa20 ? "跌破均線" : overheated ? "過熱" : (nearResistance || far) ? "偏高" : nearSupport ? "接近支撐" : "合理區";
+  let score = 50;
+  if (aboveMa20) score += 8; if (aboveMa60) score += 8; if (ma20 && ma60 && ma20 > ma60) score += 6;
+  if (belowMa20) score -= 18; if (r != null) { if (r >= 75) score -= 18; else if (r >= 70) score -= 10; else if (r <= 35) score += 8; }
+  if (nearSupport) score += 8; if (nearResistance) score -= 6; if (far) score -= 8;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  const risk = (overheated || far) ? "高" : (r != null && r < 65 && !nearResistance && (dist20 == null || Math.abs(dist20) <= 7)) ? "低" : "中";
+  let action;
+  if (overheated) action = "不建議追高"; else if (belowMa20) action = "觀望";
+  else if (score >= 66) action = nearSupport ? "可分批觀察" : "可小量布局"; else if (score >= 54) action = "可分批觀察"; else if (score >= 44) action = "觀望"; else action = "風險偏高";
+  const seg = [];
+  if (aboveMa20 && aboveMa60) seg.push("金價站上中期均線、趨勢偏多"); else if (belowMa20) seg.push("金價跌破中期均線、趨勢轉弱"); else seg.push("金價趨勢中性");
+  if (overheated) seg.push(`RSI ${fmt(r, 0)} 偏高、短線過熱`); else if (r != null && r <= 35) seg.push(`RSI ${fmt(r, 0)} 偏低`);
+  let adv;
+  if (overheated) adv = "短線距離支撐較遠、追價風險高，不建議一次追高；若想配置黃金，較適合等待回落接近支撐區後分批";
+  else if (belowMa20) adv = "方向未明，建議觀望、待站回均線再評估配置";
+  else if (nearSupport) adv = "目前接近支撐，可小額分批布局並控制部位，黃金宜作為長期資產配置";
+  else if (nearResistance || far) adv = "距離支撐較遠 / 接近壓力，不建議一次追高，可等待回落分批";
+  else adv = "可分批觀察、避免一次買滿，黃金宜作為長期避險與資產配置工具，而非短線追價";
+  return { trend, position, score, risk, action, operation: seg.join("，") + "；" + adv + "。", aboveMa20, aboveMa60, overheated, belowMa20, nearSupport, nearResistance, far, dist20 };
+}
+function goldBuy(g, d) {
+  const r = [], i = g.ind;
+  if (d.aboveMa20) r.push("金價站上 MA20，中短線趨勢偏多");
+  if (d.aboveMa60) r.push("金價站上 MA60，中期趨勢仍偏多");
+  if (d.nearSupport) r.push("現價接近支撐區，下檔風險相對有限");
+  if (i && i.rsi != null && i.rsi <= 40) r.push(`RSI ${fmt(i.rsi, 0)} 偏低，短線有反彈機會`);
+  if (g.rets && g.rets.y1 != null && g.rets.y1 > 0) r.push(`近一年上漲 ${fmt(g.rets.y1, 0)}%，長期趨勢向上`);
+  r.push("黃金具避險與資產配置價值，適合長期小額分批配置");
+  const fill = ["可分批降低平均成本、避免一次買滿", "作為投組避險工具，分散股票風險"];
+  for (const f of fill) { if (r.length >= 3) break; if (!r.includes(f)) r.push(f); }
+  return r.slice(0, 6);
+}
+function goldAvoid(g, d) {
+  const r = [], i = g.ind;
+  if (d.overheated) r.push(`RSI ${i ? fmt(i.rsi, 0) : "—"} 偏高、短線過熱，不宜一次追高`);
+  if (d.far) r.push(`金價偏離 MA20 約 ${fmt(d.dist20, 0)}%，距離支撐過遠`);
+  if (d.nearResistance) r.push("金價接近壓力 / 高位附近，追高套牢風險升高");
+  r.push("美元若轉強通常壓抑金價");
+  r.push("利率維持高檔可能壓抑無息資產的黃金");
+  if (g.rets && g.rets.m1 != null && g.rets.m1 > 8) r.push(`近一個月已上漲 ${fmt(g.rets.m1, 0)}%，短線漲多易回檔`);
+  const fill = ["短線漲多容易回檔，宜分批進場", "金價接近歷史高位時不宜重壓"];
+  for (const f of fill) { if (r.length >= 3) break; if (!r.includes(f)) r.push(f); }
+  return r.slice(0, 6);
+}
+function goldConclusion(g, d) {
+  if (!d) return "目前僅取得金價現價，歷史 / 技術資料不足，無法給出完整趨勢判斷；建議搭配外部金價網站確認走勢後再決定配置。";
+  if (d.overheated) return "目前金價趨勢仍偏多，但短線已接近壓力區、RSI 偏高，不建議一次追高。若目的是長期資產配置，可採小額分批；若是短線交易，建議等待回落接近支撐區再觀察。";
+  if (d.belowMa20) return "目前金價跌破中短期均線、方向未明，建議觀望，待站回均線並確認支撐後再評估配置。";
+  if (d.nearSupport) return "目前金價接近支撐區，若作長期資產配置可小額分批布局並控制部位；跌破支撐則先觀望。";
+  return "目前金價趨勢中性偏多，建議分批、避免一次買滿；黃金宜作為長期避險與資產配置工具，而非股票式短線追價。";
+}
+function goldFresh(updatedAt) {
+  if (!updatedAt) return { type: "最新可取得資料", recent: true };
+  const mins = (Date.now() - new Date(updatedAt).getTime()) / 60000;
+  return { type: mins <= 30 ? "近即時資料（公開資料，非券商即時逐筆）" : (mins <= 1440 ? "延遲資料（公開資料）" : "最新可取得資料"), recent: mins <= 1440 };
+}
+
+async function loadGold() {
+  const body = $("goldBody");
+  body.innerHTML = `<div class="muted">載入金價分析中…</div>`;
+  await refreshGold(true);
+}
+async function refreshGold(isFirst) {
+  const body = $("goldBody");
+  const s = body.querySelector(".upd-status"); if (s) s.textContent = "更新中…";
+  try {
+    const g = await buildGold();
+    g.decision = decideGold(g);
+    let initView = null;
+    const oldCv = body.querySelector("canvas.kline");
+    if (oldCv && oldCv._view) initView = { count: oldCv._view.count, endOffset: oldCv._barsLen - oldCv._view.end };
+    const prev = GOLD_LASTPRICE;
+    body.innerHTML = renderGold(g, { updatedAt: nowStamp(), autoVal: GOLD_AUTO });
+    GOLD_LASTPRICE = g.current;
+    const wrap = body.querySelector(".kline-wrap");
+    if (wrap) setupKline(wrap, g.bars, g.ind.support, g.ind.resistance, initView, Math.min(252, g.bars.length));
+    setupGoldControls();
+    if (!isFirst && prev != null && g.current !== prev) { const px = body.querySelector(".px"); if (px) { px.classList.add(g.current > prev ? "flash-up" : "flash-down"); setTimeout(() => px.classList.remove("flash-up", "flash-down"), 800); } }
+  } catch (e) {
+    const ext = GOLD_EXT.map(([t, u]) => `<a href="${u}">${esc(t)}</a>`).join(" ・ ");
+    body.innerHTML = `<div class="err">⚠️ 黃金價格資料來源暫時不可用，請稍後再試或改用外部金價網站。</div><p class="news-links">${ext}</p>`;
+  }
+}
+function setupGoldControls() {
+  const body = $("goldBody");
+  const btn = body.querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => refreshGold(false));
+  const sel = body.querySelector(".upd-auto");
+  if (sel) { sel.value = GOLD_AUTO; sel.addEventListener("change", () => { GOLD_AUTO = sel.value; setGoldAuto({ off: 0, "30": 30000, "60": 60000, "300": 300000 }[sel.value] || 0); }); }
+}
+function renderGold(g, meta) {
+  const d = g.decision, fr = goldFresh(g.updatedAt);
+  const dir = g.change == null ? "" : g.change >= 0 ? "px-up" : "px-down";
+  const actCls = d ? ((d.action === "可分批觀察" || d.action === "可小量布局") ? "good" : (d.action === "不建議追高" || d.action === "風險偏高") ? "bad" : "neutral") : "neutral";
+  const header = `<div class="rhead"><h3>國際金價 <span class="code">XAU/USD</span></h3></div>
+    <div class="ticker"><span class="px ${dir}">$${fmt(g.current)}</span><span class="unit">/ oz</span><span class="chg ${dir}">${g.change == null ? "（無前日對比）" : pct(g.change)}</span></div>
+    <div class="updbar"><div class="updctrls"><button class="upd-btn"><span aria-hidden="true">↻</span> 更新金價</button>
+      <label class="autolbl">自動更新 <select class="upd-auto"><option value="off">關閉</option><option value="30">每 30 秒</option><option value="60">每 1 分</option><option value="300">每 5 分</option></select></label></div>
+      <div class="updmeta"><span class="upd-status">最後更新：${esc(meta.updatedAt)}</span>｜現價來源：Gold-API.com｜價格類型：${esc(fr.type)}</div></div>
+    <p class="px-note">目前價格以公開資料來源最新可取得資料為準，可能不是即時逐筆報價。</p>
+    ${d ? `<div class="sumbadges"><span class="badge ${actCls}">${esc(d.action)}</span><span>信心 <b>${d.score}</b>/100</span><span>風險 <b>${esc(d.risk)}</b></span><span>趨勢 <b>${esc(d.trend)}</b></span><span>位置 <b>${esc(d.position)}</b></span></div>` : ""}`;
+
+  let twd;
+  if (g.rate) { const perG = g.current * g.rate / OZ_G; twd = ul([`約當台幣 / 克：${thou(perG)} 元`, `約當台幣 / 錢：${thou(perG * QIAN_G)} 元`, `約當台幣 / 台兩：${thou(perG * TAEL_G)} 元`]) + `<p class="exp">匯率 USD/TWD ≈ ${fmt(g.rate, 2)}（FinMind 即期中價）；換算：1 oz = 31.1035 克、1 錢 = 3.75 克、1 台兩 = 37.5 克。</p>`; }
+  else twd = "<p>台幣換算資料不足。</p>";
+  const twdB = `<div class="block"><h4>② 台幣換算</h4>${twd}</div>`;
+  const stateB = d ? `<div class="block decision"><h4>③ 金價狀態 / 操作建議</h4><p>趨勢：<b>${esc(d.trend)}</b>　｜位置：${esc(d.position)}　｜建議：<b>${esc(d.action)}</b>　｜風險：${esc(d.risk)}　｜信心：${d.score}/100</p><p class="op">${esc(d.operation)}</p></div>`
+    : `<div class="block decision"><h4>③ 金價狀態 / 操作建議</h4><p>歷史 / 技術資料不足，僅提供現價；完整趨勢判斷請搭配外部金價走勢圖。</p></div>`;
+
+  let tech;
+  if (g.ind) { const i = g.ind, R = g.rets;
+    const techList = [`MA5：${fmt(i.ma5)}　MA20：${fmt(i.ma20)}`, `MA60：${fmt(i.ma60)}　MA200：${i.ma200 != null ? fmt(i.ma200) : "資料不足"}`,
+      `RSI：${i.rsi == null ? "—" : fmt(i.rsi, 0) + (i.rsi >= 70 ? "（過熱）" : i.rsi <= 30 ? "（偏弱）" : "（健康）")}`, `支撐：${fmt(i.support)}　壓力：${fmt(i.resistance)}`,
+      `近1月：${R && R.m1 != null ? (R.m1 >= 0 ? "+" : "") + fmt(R.m1, 1) + "%" : "資料不足"}　近3月：${R && R.m3 != null ? (R.m3 >= 0 ? "+" : "") + fmt(R.m3, 1) + "%" : "資料不足"}　近1年：${R && R.y1 != null ? (R.y1 >= 0 ? "+" : "") + fmt(R.y1, 1) + "%" : "資料不足"}`];
+    const cur = g.current, p = [];
+    if (i.ma20 && cur > i.ma20) p.push("目前金價站上 MA20"); if (i.ma60 && cur > i.ma60) p.push("並站上 MA60，中短線趨勢仍偏多");
+    let ex = p.join("，") || "金價位於均線下方、趨勢偏弱"; ex += "；";
+    ex += i.rsi == null ? "RSI 資料不足。" : i.rsi >= 70 ? `RSI 已達 ${fmt(i.rsi, 0)}，短線可能過熱，較不適合一次追高。` : i.rsi <= 30 ? `RSI ${fmt(i.rsi, 0)} 偏低、短線超賣。` : `RSI ${fmt(i.rsi, 0)} 位於健康區間。`;
+    tech = `<div class="block"><h4>④ 技術面</h4>${ul(techList)}<p class="exp">${esc(ex)}</p></div>`;
+  } else tech = `<div class="block"><h4>④ 技術面</h4><p>歷史資料不足，無法計算均線 / RSI / 支撐壓力。</p></div>`;
+
+  let chart;
+  if (g.histAvailable) {
+    chart = `<div class="block kline-wrap"><h4>⑤ 歷年金價圖　<small>美元黃金期貨 · 電腦：滾輪縮放／拖曳　手機：雙指縮放／單指平移</small></h4>
+      <div class="kl-tools"><button data-kl="in">＋ 放大</button><button data-kl="out">－ 縮小</button><button data-kl="reset">⟲ 重設</button>
+        <button data-kl="21">1M</button><button data-kl="63">3M</button><button data-kl="126">6M</button><button data-kl="252">1Y</button><button data-kl="756">3Y</button><button data-kl="1260">5Y</button><button data-kl="max">Max</button><span class="kl-range"></span></div>
+      <canvas class="kline"></canvas>
+      <div class="legend"><span class="lg up">紅 漲</span><span class="lg dn">綠 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div></div>`;
+  } else {
+    const ext = GOLD_EXT.map(([t, u]) => `<a href="${u}">${esc(t)}</a>`).join(" ・ ");
+    chart = `<div class="block"><h4>⑤ 歷年金價圖</h4><p>歷史金價資料來源暫時不可用，請稍後再試或改用外部金價網站。</p><p class="news-links">${ext}</p></div>`;
+  }
+
+  const newsCats = "美元走勢 ・ 聯準會 / 利率 ・ 通膨 ・ 地緣政治 ・ 央行買金 ・ 避險需求";
+  const newsLinks = GOLD_EXT.map(([t, u]) => `<a href="${u}">${esc(t)}</a>`).join(" ・ ");
+  const news = `<div class="block"><h4>⑥ 黃金相關新聞</h4><p class="exp">影響金價的常見主題：${newsCats}。</p>
+    <p>新聞來源受限於純前端 CORS，部分新聞需開啟外部搜尋連結查看：</p><p class="news-links">${newsLinks}</p></div>`;
+
+  const buyB = d ? `<div class="block buy"><h4>⑦ 為什麼可以入手 / 偏多理由</h4>${ul(goldBuy(g, d))}</div>` : "";
+  const avoidB = d ? `<div class="block nobuy"><h4>⑧ 為什麼不建議追高 / 風險理由</h4>${ul(goldAvoid(g, d))}</div>` : "";
+  const conclB = `<div class="block conclusion"><h4>⑨ 黃金入手判斷 · 結論</h4><p>${esc(goldConclusion(g, d))}</p></div>`;
+
+  const lag = g.lastDate ? daysBetween(g.lastDate) : null;
+  const recent = lag == null ? fr.recent : lag <= 4;
+  const srcList = [`現價來源：Gold-API.com（XAU/USD，公開資料）`, `歷史 / 技術來源：FinMind 台灣黃金期貨（GDF，美元計價，近似國際金價）`, `最新資料時間：${esc(meta.updatedAt)}（現價）${g.lastDate ? "｜歷史資料日：" + esc(g.lastDate) : ""}`, `資料筆數：${g.rows} 筆（歷史）`, `價格類型：${esc(fr.type)}`, `是否延遲：${recent ? "正常" : "可能延遲"}`];
+  const source = `<div class="block source"><h4>⑩ 資料來源與更新時間</h4>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}
+    <p class="exp">圖表為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
+    <p class="exp">此版本為純前端版本，金價資料以公開資料來源為主，<b>未進行雙來源交叉驗證</b>。</p></div>`;
+
+  return `<div class="gold-result">` + header + twdB + stateB + tech + chart + news + `<div class="aspects two">${buyB}${avoidB}</div>` + conclB + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。黃金宜作為長期資產配置工具。</p></div>`;
+}
+
 /* ---------- resize 重繪 ---------- */
 let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => { document.querySelectorAll(".kline").forEach((cv) => { if (cv._redraw) cv._redraw(); }); }, 150); });
 
 /* ---------- 事件 ---------- */
-document.querySelectorAll(".feature").forEach((b) => b.addEventListener("click", () => { const t = $(b.getAttribute("data-goto")); if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); const inp = t.querySelector("input,select"); if (inp) setTimeout(() => inp.focus(), 300); } }));
+function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGold(); }
+function goldEntry() { $("gold").scrollIntoView({ behavior: "smooth", block: "start" }); ensureGold(); }
+document.querySelectorAll(".feature").forEach((b) => b.addEventListener("click", () => { const id = b.getAttribute("data-goto"); const t = $(id); if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); if (id === "gold") { ensureGold(); return; } const inp = t.querySelector("input,select"); if (inp) setTimeout(() => inp.focus(), 300); } }));
 document.querySelectorAll("[data-act]").forEach((el) => {
   const handler = () => {
     const act = el.getAttribute("data-act");
     if (act === "market") { $("query").scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => $("symbol").focus(), 320); }
+    else if (act === "gold") goldEntry();
     else if (act === "source") { const s = document.querySelector(".result .source"); if (s) s.scrollIntoView({ behavior: "smooth", block: "center" }); else toast("分析股票後會顯示資料來源、最新資料日期與資料筆數。"); }
-    else if (act === "kline") { const k = document.querySelector(".result .kline-wrap"); if (k) k.scrollIntoView({ behavior: "smooth", block: "center" }); else { $("query").scrollIntoView({ behavior: "smooth", block: "start" }); toast("請先輸入股票代號並分析，系統會產生互動 K 線圖。"); } }
+    else if (act === "kline") { const k = document.querySelector(".result .kline-wrap, .gold-result .kline-wrap"); if (k) k.scrollIntoView({ behavior: "smooth", block: "center" }); else { $("query").scrollIntoView({ behavior: "smooth", block: "start" }); toast("請先輸入股票代號並分析，系統會產生互動 K 線圖。"); } }
   };
   el.addEventListener("click", handler);
   el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handler(); } });
 });
+{ const gl = $("goldLoad"); if (gl) gl.addEventListener("click", loadGold); }
 $("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value); });
 $("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
 $("save").addEventListener("click", () => { const s = $("h-symbol").value.trim().toUpperCase(); if (!s) return; const m = $("h-market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });

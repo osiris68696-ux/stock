@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>台美股智慧分析</title>
-  <meta name="description" content="台美股智慧分析：基本面 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
+  <title>台美股・黃金智慧分析</title>
+  <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <!-- 頂部品牌列 -->
   <header class="appbar">
     <div class="appbar-inner">
-      <span class="brand">📈 台美股智慧分析</span>
+      <span class="brand">📈 台美股・黃金智慧分析</span>
       <span class="appbar-status">
         <span class="tagdot">FinMind Open Data</span>
-        <span class="tagdot">TW / US Market</span>
+        <span class="tagdot">Gold-API XAU/USD</span>
         <span class="tagdot">Canvas K-Line</span>
       </span>
     </div>
@@ -23,12 +23,12 @@
   <main class="shell">
     <!-- Hero -->
     <section class="hero">
-      <h1>台美股智慧分析</h1>
-      <p class="tagline">基本面 × 技術面 × 籌碼面｜投資決策輔助工具</p>
+      <h1>台美股・黃金智慧分析</h1>
+      <p class="tagline">股票 × 黃金 × 技術面 × 籌碼面｜投資決策輔助工具</p>
       <div class="status-cards">
         <div class="status" data-act="market" role="button" tabindex="0"><span class="ico">🌐</span><div class="st-txt"><b>台股 / 美股</b><small>支援代號查詢</small></div></div>
-        <div class="status" data-act="source" role="button" tabindex="0"><span class="ico">🛢️</span><div class="st-txt"><b>資料來源</b><small>FinMind 開放 API</small></div></div>
-        <div class="status" data-act="kline" role="button" tabindex="0"><span class="ico">🕹️</span><div class="st-txt"><b>K 線圖</b><small>支援縮放與拖曳</small></div></div>
+        <div class="status" data-act="gold" role="button" tabindex="0"><span class="ico">🥇</span><div class="st-txt"><b>黃金價格</b><small>國際金價與走勢</small></div></div>
+        <div class="status" data-act="kline" role="button" tabindex="0"><span class="ico">🕹️</span><div class="st-txt"><b>互動 K 線</b><small>支援縮放與拖曳</small></div></div>
       </div>
     </section>
 
@@ -38,6 +38,7 @@
       <button class="feature" data-goto="myholdings"><span class="ico">💼</span><b>我的持股</b><small>成本、股數、損益與操作建議</small></button>
       <button class="feature" data-goto="query"><span class="ico">📊</span><b>技術面 / K 線</b><small>MA、RSI、支撐壓力與互動 K 線</small></button>
       <button class="feature" data-goto="query"><span class="ico">🧭</span><b>三大分析</b><small>基本面、技術面、籌碼面整合判斷</small></button>
+      <button class="feature" data-goto="gold"><span class="ico">🥇</span><b>黃金價格</b><small>追蹤國際金價、歷年走勢、新聞與入手判斷</small></button>
     </section>
 
     <!-- 股票快查主卡 (左表單 / 右說明) -->
@@ -79,6 +80,12 @@
           <button id="clearAll" class="ghost danger">清空</button>
         </div>
       </div>
+    </section>
+
+    <!-- 黃金價格分析 -->
+    <section class="card" id="gold">
+      <h2>🥇 黃金價格分析</h2>
+      <div id="goldBody"><button id="goldLoad" class="primary-lg">載入金價分析</button></div>
     </section>
 
     <section id="results"></section>
