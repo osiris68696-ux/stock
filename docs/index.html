@@ -26,9 +26,9 @@
       <h1>台美股・黃金智慧分析</h1>
       <p class="tagline">股票 × 黃金 × 技術面 × 籌碼面｜投資決策輔助工具</p>
       <div class="status-cards">
-        <div class="status" data-act="market" role="button" tabindex="0"><span class="ico">🌐</span><div class="st-txt"><b>台股 / 美股</b><small>支援代號查詢</small></div></div>
-        <div class="status" data-act="gold" role="button" tabindex="0"><span class="ico">🥇</span><div class="st-txt"><b>黃金價格</b><small>國際金價與走勢</small></div></div>
-        <div class="status" data-act="kline" role="button" tabindex="0"><span class="ico">🕹️</span><div class="st-txt"><b>互動 K 線</b><small>支援縮放與拖曳</small></div></div>
+        <div class="status" data-act="twnews" role="button" tabindex="0"><span class="ico">📰</span><div class="st-txt"><b>台股相關新聞搜尋</b><small>個股新聞、財報、法人與市場消息</small></div></div>
+        <div class="status" data-act="usnews" role="button" tabindex="0"><span class="ico">🗞️</span><div class="st-txt"><b>美股相關新聞搜尋</b><small>公司新聞、財報、財測與市場消息</small></div></div>
+        <div class="status" data-act="gold" role="button" tabindex="0"><span class="ico">🥇</span><div class="st-txt"><b>黃金價格</b><small>國際金價、歷年走勢、新聞與入手判斷</small></div></div>
       </div>
     </section>
 
@@ -36,29 +36,45 @@
     <section class="features">
       <button class="feature" data-goto="query"><span class="ico">🔎</span><b>股票快查</b><small>輸入股票代號立即分析</small></button>
       <button class="feature" data-goto="myholdings"><span class="ico">💼</span><b>我的持股</b><small>成本、股數、損益與操作建議</small></button>
-      <button class="feature" data-goto="query"><span class="ico">📊</span><b>技術面 / K 線</b><small>MA、RSI、支撐壓力與互動 K 線</small></button>
-      <button class="feature" data-goto="query"><span class="ico">🧭</span><b>三大分析</b><small>基本面、技術面、籌碼面整合判斷</small></button>
-      <button class="feature" data-goto="gold"><span class="ico">🥇</span><b>黃金價格</b><small>追蹤國際金價、歷年走勢、新聞與入手判斷</small></button>
     </section>
 
-    <!-- 股票快查主卡 (左表單 / 右說明) -->
-    <section class="panel" id="query">
-      <div class="panel-left">
+    <!-- 股票快查主卡 -->
+    <section class="panel solo" id="query">
+      <div class="panel-left wide">
         <h2>🔎 股票快查</h2>
-        <p class="panel-sub">選擇市場、輸入代號，立即取得整合分析。</p>
-        <div class="field"><label>市場</label>
+        <p class="panel-sub">輸入台股或美股代號後，系統會整理價格、技術面、基本面、籌碼面與 K 線圖。</p>
+        <div class="row">
           <select id="market"><option value="TW">台股</option><option value="US">美股</option></select>
-        </div>
-        <div class="field"><label>股票代號</label>
           <input id="symbol" type="text" placeholder="例：2330 或 AAPL" maxlength="10" autocomplete="off" />
         </div>
         <button id="go" class="primary-lg">開始分析</button>
         <div id="status" class="status-line"></div>
       </div>
-      <div class="panel-right">
-        <div class="mini"><span class="ico">🧱</span><b>基本面</b><small>買什麼公司</small></div>
-        <div class="mini"><span class="ico">📐</span><b>技術面</b><small>什麼時候買賣</small></div>
-        <div class="mini"><span class="ico">🏦</span><b>籌碼面</b><small>看主力動向</small></div>
+    </section>
+
+    <!-- 台股相關新聞搜尋 -->
+    <section class="card" id="twnews">
+      <h2>📰 台股相關新聞搜尋</h2>
+      <p class="panel-sub">輸入台股代號，查詢個股新聞、財報、法人與市場消息（外部搜尋，新分頁開啟）。</p>
+      <div class="row"><input id="tw-news-sym" type="text" placeholder="台股代號（4~6 位數字，例 2330、2454、2317）" maxlength="6" autocomplete="off" /></div>
+      <div class="row newsbtns">
+        <button class="ghost" data-news="tw" data-kind="news">搜尋台股新聞</button>
+        <button class="ghost" data-news="tw" data-kind="fin">搜尋財報 / 基本面</button>
+        <button class="ghost" data-news="tw" data-kind="chip">搜尋法人 / 籌碼</button>
+        <button class="ghost" data-news="tw" data-kind="yahoo">Yahoo 股市</button>
+      </div>
+    </section>
+
+    <!-- 美股相關新聞搜尋 -->
+    <section class="card" id="usnews">
+      <h2>🗞️ 美股相關新聞搜尋</h2>
+      <p class="panel-sub">輸入美股代號，查詢公司新聞、財報、財測與市場消息（外部搜尋，新分頁開啟）。</p>
+      <div class="row"><input id="us-news-sym" type="text" placeholder="美股代號（例 AAPL、NVDA、MSFT、BRK.B）" maxlength="10" autocomplete="off" /></div>
+      <div class="row newsbtns">
+        <button class="ghost" data-news="us" data-kind="news">搜尋美股新聞</button>
+        <button class="ghost" data-news="us" data-kind="fin">搜尋財報 / Earnings</button>
+        <button class="ghost" data-news="us" data-kind="analyst">搜尋分析師消息</button>
+        <button class="ghost" data-news="us" data-kind="yahoo">Yahoo Finance</button>
       </div>
     </section>
 

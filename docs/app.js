@@ -8,6 +8,7 @@ const LS_KEY = "twus_holdings";
 const FINMIND = "https://api.finmindtrade.com/api/v4/data";   // 唯一允許的資料網域
 const TW_RE = /^[0-9]{4,6}$/;
 const US_RE = /^[A-Za-z]{1,10}$/;
+const US_NEWS_RE = /^[A-Za-z][A-Za-z.\-]{0,9}$/;   // 美股新聞搜尋（可含 . 或 -，如 BRK.B）
 const PRICE_TYPE = "最新收盤價（FinMind 日線資料，非即時逐筆報價）";
 const $ = (id) => document.getElementById(id);
 
@@ -603,7 +604,8 @@ function renderGold(g, meta) {
       <div class="kl-tools"><button data-kl="in">＋ 放大</button><button data-kl="out">－ 縮小</button><button data-kl="reset">⟲ 重設</button>
         <button data-kl="21">1M</button><button data-kl="63">3M</button><button data-kl="126">6M</button><button data-kl="252">1Y</button><button data-kl="756">3Y</button><button data-kl="1260">5Y</button><button data-kl="max">Max</button><span class="kl-range"></span></div>
       <canvas class="kline"></canvas>
-      <div class="legend"><span class="lg up">紅 漲</span><span class="lg dn">綠 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div></div>`;
+      <div class="legend"><span class="lg up">紅 漲</span><span class="lg dn">綠 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div>
+      <p class="exp">⚠ FinMind 台灣黃金期貨 GDF 為美元計價黃金期貨，僅作為國際金價歷史走勢近似，不等於 XAU/USD 現貨逐筆歷史資料。</p></div>`;
   } else {
     const ext = GOLD_EXT.map(([t, u]) => `<a href="${u}">${esc(t)}</a>`).join(" ・ ");
     chart = `<div class="block"><h4>⑤ 歷年金價圖</h4><p>歷史金價資料來源暫時不可用，請稍後再試或改用外部金價網站。</p><p class="news-links">${ext}</p></div>`;
@@ -635,18 +637,40 @@ let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setT
 function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGold(); }
 function goldEntry() { $("gold").scrollIntoView({ behavior: "smooth", block: "start" }); ensureGold(); }
 document.querySelectorAll(".feature").forEach((b) => b.addEventListener("click", () => { const id = b.getAttribute("data-goto"); const t = $(id); if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); if (id === "gold") { ensureGold(); return; } const inp = t.querySelector("input,select"); if (inp) setTimeout(() => inp.focus(), 300); } }));
+function scrollFocus(secId, inpId) { $(secId).scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => { const i = $(inpId); if (i) i.focus(); }, 320); }
 document.querySelectorAll("[data-act]").forEach((el) => {
   const handler = () => {
     const act = el.getAttribute("data-act");
-    if (act === "market") { $("query").scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => $("symbol").focus(), 320); }
+    if (act === "twnews") scrollFocus("twnews", "tw-news-sym");
+    else if (act === "usnews") scrollFocus("usnews", "us-news-sym");
     else if (act === "gold") goldEntry();
-    else if (act === "source") { const s = document.querySelector(".result .source"); if (s) s.scrollIntoView({ behavior: "smooth", block: "center" }); else toast("分析股票後會顯示資料來源、最新資料日期與資料筆數。"); }
-    else if (act === "kline") { const k = document.querySelector(".result .kline-wrap, .gold-result .kline-wrap"); if (k) k.scrollIntoView({ behavior: "smooth", block: "center" }); else { $("query").scrollIntoView({ behavior: "smooth", block: "start" }); toast("請先輸入股票代號並分析，系統會產生互動 K 線圖。"); } }
   };
   el.addEventListener("click", handler);
   el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handler(); } });
 });
 { const gl = $("goldLoad"); if (gl) gl.addEventListener("click", loadGold); }
+
+/* ---------- 新聞外部搜尋（只開外部分頁，不 fetch 新聞 API） ---------- */
+function openSearch(url) { window.open(url, "_blank", "noopener,noreferrer"); }
+function gNews(q, lang) { return "https://news.google.com/search?q=" + encodeURIComponent(q) + "&hl=" + lang; }
+document.querySelectorAll("[data-news]").forEach((btn) => btn.addEventListener("click", () => {
+  const mkt = btn.getAttribute("data-news"), kind = btn.getAttribute("data-kind");
+  if (mkt === "tw") {
+    const s = $("tw-news-sym").value.trim();
+    if (!TW_RE.test(s)) { toast("請輸入有效台股代號，例如 2330、2454、2317。"); return; }
+    if (kind === "news") openSearch(gNews(s + " 台股 新聞", "zh-TW"));
+    else if (kind === "fin") openSearch(gNews(s + " 財報 基本面", "zh-TW"));
+    else if (kind === "chip") openSearch(gNews(s + " 外資 投信 自營商 融資 融券", "zh-TW"));
+    else openSearch("https://tw.stock.yahoo.com/quote/" + encodeURIComponent(s));
+  } else {
+    const s = $("us-news-sym").value.trim().toUpperCase();
+    if (!US_NEWS_RE.test(s)) { toast("請輸入有效美股代號，例如 AAPL、NVDA、MSFT。"); return; }
+    if (kind === "news") openSearch(gNews(s + " stock news", "en-US"));
+    else if (kind === "fin") openSearch(gNews(s + " earnings financials", "en-US"));
+    else if (kind === "analyst") openSearch(gNews(s + " analyst rating target price", "en-US"));
+    else openSearch("https://finance.yahoo.com/quote/" + encodeURIComponent(s));
+  }
+}));
 $("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value); });
 $("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
 $("save").addEventListener("click", () => { const s = $("h-symbol").value.trim().toUpperCase(); if (!s) return; const m = $("h-market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });

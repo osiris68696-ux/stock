@@ -164,6 +164,14 @@ footer { max-width: var(--max); margin: 0 auto; padding: 22px; color: var(--mute
 .px-note { color: var(--muted); font-size: .8rem; margin: 0 0 6px; }
 .warn { color: var(--orange); font-weight: 600; margin: 4px 0; }
 
+/* 新聞外部搜尋 */
+.newsbtns { gap: 8px; }
+.newsbtns button { font-size: .88rem; padding: 9px 13px; }
+.news-links { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0 0; }
+.news-links a { color: var(--accent); text-decoration: none; font-size: .9rem; border: 1px solid var(--line2); border-radius: 999px; padding: 5px 12px; }
+.news-links a:hover { border-color: var(--accent); }
+.ticker .unit { color: var(--muted); font-size: .9rem; margin-left: -6px; }
+
 /* K 線觸控：避免整頁滾動/縮放 */
 .kline-wrap canvas.kline { touch-action: none; }
 @media (max-width: 560px) { .px { font-size: 1.7rem; } .updbar { flex-direction: column; align-items: stretch; } }
