@@ -384,7 +384,7 @@ function drawKline(canvas, bars, view, support, resistance) {
   if (inclR) { ctx.strokeStyle = "#ff7a45"; ctx.beginPath(); ctx.moveTo(padL, yP(resistance)); ctx.lineTo(padL + W, yP(resistance)); ctx.stroke(); ctx.fillStyle = "#ff7a45"; ctx.fillText("壓力 " + resistance.toFixed(1), padL + 2, yP(resistance) + 10); }
   ctx.setLineDash([]);
   data.forEach((b, i) => {
-    const x = padL + slot * i + slot / 2, up = b.c >= b.o, col = up ? "#ef4d4d" : "#2ebd6b";
+    const x = padL + slot * i + slot / 2, up = b.c >= b.o, col = up ? "#2ee6a6" : "#ff4d62";
     ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x, yP(b.h)); ctx.lineTo(x, yP(b.l)); ctx.stroke();
     const yo = yP(b.o), yc = yP(b.c); ctx.fillRect(x - bw / 2, Math.min(yo, yc), bw, Math.max(1, Math.abs(yc - yo)));
@@ -633,7 +633,7 @@ function renderResult(a, meta) {
   const kline = `<div class="block kline-wrap"><h4>⑤ K 線圖　<small>近 60 日 · 電腦：滾輪縮放／拖曳平移　手機：雙指縮放／單指平移</small></h4>
       <div class="kl-tools"><button data-kl="in">＋ 放大</button><button data-kl="out">－ 縮小</button><button data-kl="reset">⟲ 重設</button><button data-kl="30">30日</button><button data-kl="60">60日</button><button data-kl="120">120日</button><span class="kl-range"></span></div>
       <canvas class="kline"></canvas>
-      <div class="legend"><span class="lg up">紅 漲</span><span class="lg dn">綠 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div></div>`;
+      <div class="legend"><span class="lg up">綠 漲</span><span class="lg dn">紅 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div></div>`;
 
   const buy = `<div class="block buy"><h4>⑥ 為什麼可以買 / 偏多理由</h4>${ul(buyReasons(i, f, d, m, a.chip))}</div>`;
   const nobuy = `<div class="block nobuy"><h4>⑦ 為什麼不建議買 / 風險理由</h4>${ul(avoidReasons(i, f, d, m, a.chip))}</div>`;
