@@ -200,6 +200,12 @@ body.modal-open { overflow: hidden; }
 .lg.m20, .lg.m20::before { color: #4da3ff; }
 .lg.m60, .lg.m60::before { color: #b388ff; }
 
+/* 選股邏輯 / 一票否決 */
+.selection { border-left: 3px solid var(--accent2); }
+.cat-badge { display: inline-block; padding: 3px 11px; border-radius: 999px; font-weight: 700; font-size: .85rem; background: var(--accent2); color: #0b0716; }
+.cat-badge.cat-na { background: #3a4150; color: var(--fg); }
+.veto { margin: 6px 0 0; color: var(--orange); font-weight: 600; }
+
 /* 黃金：單位、新聞外部連結 */
 .unit { color: var(--muted); font-size: .95rem; align-self: flex-end; margin-left: -6px; }
 .news-links { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 8px 0 0; }

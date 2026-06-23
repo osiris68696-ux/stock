@@ -102,6 +102,13 @@ function decide(ind, fund, market) {
   if (overheated) action = "不建議追高"; else if (belowMa20) action = "觀望";
   else if (score >= 68) action = nearSupport ? "可分批觀察" : "可小量布局";
   else if (score >= 55) action = "可分批觀察"; else if (score >= 45) action = "觀望"; else action = "風險偏高";
+  // 一票否決制：RSI 過熱 (>=70) 一律否決積極建議
+  let veto = false, vetoReason = null;
+  if (r != null && r >= 70 && ["買進", "可小量布局", "可分批觀察"].includes(action)) {
+    veto = true; vetoReason = `RSI ${fmt(r, 0)} ≥ 70 過熱，一票否決積極建議`;
+    action = r >= 78 ? "不建議追高" : "觀望（RSI 過熱否決）";
+    score = Math.min(score, 45);
+  }
   const seg = [];
   if (overheated) seg.push(`目前 RSI ${fmt(r, 0)} 短線過熱`); else if (r != null && r <= 30) seg.push(`RSI ${fmt(r, 0)} 偏低、短線超賣`);
   if (trendUp) seg.push("均線多頭排列、趨勢偏多"); else if (belowMa20) seg.push("股價跌破月線、趨勢轉弱"); else seg.push("趨勢中性");
@@ -111,7 +118,36 @@ function decide(ind, fund, market) {
   else if (nearSupport) advise = "股價接近支撐，可分批布局並嚴設停損，避免單筆重壓";
   else if (nearResistance) advise = "股價接近壓力，不宜追高，可待回測支撐區再進場";
   else advise = "可分批觀察、避免單筆重壓，並留意均線與量能變化";
-  return { position, score, risk, action, operation: seg.join("，") + "；" + advise + "。", trendUp, overheated, belowMa20, nearSupport, nearResistance, farFromMa20 };
+  return { position, score, risk, action, veto, vetoReason, operation: seg.join("，") + "；" + advise + "。", trendUp, overheated, belowMa20, nearSupport, nearResistance, farFromMa20 };
+}
+
+/* ---------- 選股邏輯：分類分流 ---------- */
+const _US_TECH = new Set(["NVDA", "AMD", "TSM", "AVGO", "AAPL", "MSFT", "GOOGL", "GOOG", "META", "AMZN", "TSLA", "NFLX", "CRM", "ADBE", "ORCL", "QCOM", "INTC", "MU", "ASML", "SMCI", "ARM", "PLTR", "MRVL", "AMAT", "LRCX"]);
+const _US_ETF = new Set(["SPY", "QQQ", "VOO", "VTI", "DIA", "IWM", "ARKK", "SCHD", "VYM", "XLF", "XLK", "GLD", "SLV", "VT", "VEA", "VWO"]);
+function classifyCategory(a) {
+  const i = a.ind;
+  if (!i || i.ma20 == null || i.rsi == null) return "資料不足";
+  if (a.market === "TW") {
+    if (/^00/.test(a.symbol)) return "ETF";
+    const ind = a.industry || "";
+    if (/金融|保險|銀行|證券|金控/.test(ind)) return "金融股";
+    if (/半導體|電子|光電|通信|電腦|資訊|軟體|網路/.test(ind)) return "成長科技股";
+    const f = a.fund || {};
+    if ((f.eps != null && f.revYoy != null && f.revYoy >= 20)) return "成長科技股";
+    return "一般股";
+  }
+  if (_US_ETF.has(a.symbol)) return "ETF";
+  if (_US_TECH.has(a.symbol)) return "成長科技股";
+  return "一般股";
+}
+function categoryNote(cat) {
+  return {
+    "ETF": "ETF 適合分批 / 定期定額長期持有，分散個股風險；不宜短線追高。",
+    "金融股": "金融股看殖利率、股價淨值比與利率環境；通常波動較低、偏存股配置。",
+    "成長科技股": "成長科技股估值較高、波動大，須留意 RSI 過熱與追高風險，宜分批。",
+    "一般股": "一般個股以基本面 + 技術面 + 籌碼面綜合判斷，避免一次重壓。",
+    "資料不足": "目前技術 / 基本面資料不足，僅供參考，不宜據此積極進場。",
+  }[cat] || "";
 }
 
 /* ---------- 文字段落 ---------- */
@@ -414,7 +450,12 @@ function renderResult(a, meta) {
   let hold = "";
   if (a.holding) { const h = a.holding, cls = h.ret >= 0 ? "pnl-up" : "pnl-down"; hold = `<div class="holding"><b>💼 我的持股</b>　成本 ${fmt(h.cost)}　股數 ${fmt(h.qty, 0)}　市值 ${fmt(h.marketValue)}　<span class="${cls}">報酬 ${fmt(h.ret)}%／損益 ${fmt(h.pnl)}</span>　建議：<b>${esc(h.suggestion)}</b></div>`; }
 
-  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p><p class="op">${esc(d.operation)}</p></div>`;
+  const cat = classifyCategory(a);
+  const vetoLine = d.veto ? `<p class="veto">🚫 一票否決：${esc(d.vetoReason)}，已下修為「${esc(d.action)}」。</p>` : "";
+  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p>${vetoLine}<p class="op">${esc(d.operation)}</p></div>`;
+  const selection = `<div class="block selection"><h4>🧮 選股邏輯</h4>
+      <p>分類分流：<span class="cat-badge cat-${cat === "資料不足" ? "na" : ""}">${esc(cat)}</span>　｜一票否決（RSI≥70）：<b>${d.veto ? "已觸發 ✋" : "未觸發"}</b></p>
+      <p class="exp">${esc(categoryNote(cat))}</p></div>`;
 
   const fundList = m === "TW" ? [
     `EPS（近四季合計）：${f.eps != null ? fmt(f.eps, 2) : "資料不足"}`, `本益比 P/E：${f.pe != null ? fmt(f.pe, 1) : "資料不足"}`, `股價淨值比 P/B：${f.pb != null ? fmt(f.pb, 2) : "資料不足"}`,
@@ -450,7 +491,7 @@ function renderResult(a, meta) {
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></div>`;
 
-  return header + hold + decision + `<div class="aspects">${fundamental}${technical}${chip}</div>` + kline + `<div class="aspects two">${buy}${nobuy}</div>` + zones + concl + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p>`;
+  return header + hold + decision + selection + `<div class="aspects">${fundamental}${technical}${chip}</div>` + kline + `<div class="aspects two">${buy}${nobuy}</div>` + zones + concl + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p>`;
 }
 
 /* ===================== 黃金價格分析 ===================== */
