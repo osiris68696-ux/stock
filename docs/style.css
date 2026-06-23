@@ -202,9 +202,19 @@ body.modal-open { overflow: hidden; }
 
 /* 選股邏輯 / 一票否決 */
 .selection { border-left: 3px solid var(--accent2); }
+.selection h4 { font-size: 1.08rem; }
 .cat-badge { display: inline-block; padding: 3px 11px; border-radius: 999px; font-weight: 700; font-size: .85rem; background: var(--accent2); color: #0b0716; }
 .cat-badge.cat-na { background: #3a4150; color: var(--fg); }
 .veto { margin: 6px 0 0; color: var(--orange); font-weight: 600; }
+.sl-note { margin: 6px 0 0; color: #c6d0e0; font-size: .92rem; }
+.sl-sub { margin: 8px 0; color: var(--muted); font-size: .9rem; }
+.sl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 4px; }
+.sl-grid > div, .sl-miss, .sl-veto { background: #0c121b; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-top: 10px; }
+.sl-grid b, .sl-miss b, .sl-veto b { display: block; margin-bottom: 4px; font-size: .92rem; }
+.sl-pass { border-left: 3px solid var(--up); } .sl-risk { border-left: 3px solid var(--dn); }
+.sl-miss { border-left: 3px solid var(--gold); } .sl-veto { border-left: 3px solid var(--orange); }
+.selection ul { margin: 0; padding-left: 18px; } .selection li { margin: 4px 0; font-size: .9rem; }
+@media (max-width: 720px) { .sl-grid { grid-template-columns: 1fr; } }
 
 /* 黃金：單位、新聞外部連結 */
 .unit { color: var(--muted); font-size: .95rem; align-self: flex-end; margin-left: -6px; }

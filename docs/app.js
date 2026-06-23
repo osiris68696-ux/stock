@@ -150,6 +150,100 @@ function categoryNote(cat) {
   }[cat] || "";
 }
 
+/* ---------- 選股邏輯：動態因果明細 ---------- */
+function evaluateStockLogic(a) {
+  const i = a.ind || {}, f = a.fund || {}, chip = a.chip || {}, d = a.decision || {};
+  const cat = classifyCategory(a);
+  const rsi = i.rsi, close = i.close, ma20 = i.ma20, ma5 = i.ma5, ma10 = i.ma10, sup = i.support, res = i.resistance;
+  const noTech = ma20 == null || rsi == null || close == null;
+  const distSup = (sup && close) ? (close - sup) / sup * 100 : null;
+  const distRes = (res && close) ? (res - close) / res * 100 : null;
+  const belowMa20 = ma20 != null && close != null && close < ma20;
+  const aboveMa20 = ma20 != null && close != null && close >= ma20;
+  const bullStack = ma5 && ma10 && ma20 && ma5 > ma10 && ma10 > ma20;
+  const weakStack = ma5 && ma10 && ma20 && (ma5 < ma10 || ma10 < ma20);
+  const instNet = (chip.ok && chip.foreign != null) ? chip.foreign + (chip.trust || 0) + (chip.dealer || 0) : null;
+  const marginUp = chip.ok && chip.marginChg != null && chip.marginBal != null && chip.marginChg > Math.abs(chip.marginBal) * 0.03;
+  const fundMissing = f.pe == null && f.eps == null && f.revYoy == null;
+
+  const pass = [], risks = [], missing = [], veto = [];
+
+  if (rsi != null) {
+    if (rsi < 40) pass.push(`RSI 目前為 ${fmt(rsi, 0)}，已脫離高檔超買區、進入修正區，短線追高風險下降，但仍需確認趨勢是否止穩。`);
+    else if (rsi <= 65) pass.push(`RSI 目前為 ${fmt(rsi, 0)}，位於健康區間，短線沒有明顯過熱。`);
+  }
+  if (distSup != null && distSup >= 0 && distSup < 6) pass.push(`目前股價距離支撐 ${fmt(sup)} 約 ${fmt(distSup, 1)}%，下檔具備觀察區間。`);
+  if (aboveMa20) pass.push("股價仍站上 MA20，短線趨勢尚未完全轉弱。");
+  if (bullStack) pass.push("短期均線維持多頭排列（MA5 > MA10 > MA20），代表短線趨勢仍偏強。");
+  if (instNet != null && instNet > 0) pass.push("法人籌碼偏向買超，資金面對股價有支撐。");
+  if (f.dy != null && f.dy >= 3) pass.push(`殖利率 ${fmt(f.dy, 2)}% 具備一定收益性，對長線配置有支撐。`);
+  if (cat === "成長科技股" && belowMa20) pass.push("成長科技股波動較大，若能重新站回 MA20、量能配合，可再評估趨勢修復。");
+
+  if (belowMa20) risks.push("股價已跌破 MA20，短線多頭結構轉弱，需等待重新站回均線。");
+  if (weakStack && !belowMa20) risks.push("短期均線排列轉弱（MA5 < MA10 或 MA10 < MA20），趨勢尚未恢復多頭。");
+  if (rsi != null && rsi > 80) risks.push(`RSI ${fmt(rsi, 0)} 進入明顯過熱區，短線不適合直接追高。`);
+  else if (rsi != null && rsi > 75) risks.push(`RSI ${fmt(rsi, 0)} 已偏高，短線追價風險增加。`);
+  if (distSup != null && distSup > 10) risks.push(`目前價格距離支撐較遠（約 ${fmt(distSup, 0)}%），若追高進場，停損空間較大。`);
+  if (distRes != null && distRes >= 0 && distRes < 5) risks.push("目前股價接近壓力區，容易遇到解套賣壓或短線獲利了結。");
+  if (marginUp && (instNet == null || instNet <= 0)) risks.push("融資增加但法人未同步買超，需留意散戶追高風險。");
+  if (instNet != null && instNet < 0) risks.push("法人近期偏賣超，籌碼面尚未轉強。");
+  if (fundMissing) risks.push("基本面資料不足，無法確認公司獲利與估值是否支撐目前股價。");
+  if (a.market !== "TW") risks.push("美股缺乏台股三大法人與融資融券資料，籌碼面無法提供加分依據。");
+
+  if (f.eps == null) missing.push("EPS 資料不足");
+  if (f.pe == null) missing.push("P/E 資料不足");
+  if (f.pb == null) missing.push("P/B 資料不足");
+  if (f.dy == null) missing.push("殖利率資料不足");
+  if (f.revYoy == null) missing.push("營收成長率資料不足");
+  if (a.market === "TW") { if (!chip.ok) missing.push("三大法人 / 融資融券資料不足"); }
+  else missing.push("美股籌碼面資料不足（無三大法人 / 融資融券）");
+
+  if (d.veto) veto.push(`${d.vetoReason}，最高評級限制為 C。`);
+  const hardLimit = !!d.veto || missing.length >= 5;
+
+  // 子分數
+  let tech = 0; const techMax = 35;
+  if (aboveMa20) tech += 12; if (bullStack) tech += 10;
+  if (rsi != null && rsi >= 40 && rsi <= 65) tech += 8; else if (rsi != null && rsi >= 35 && rsi < 40) tech += 5;
+  if (distSup != null && distSup >= 0 && distSup < 6) tech += 5; tech = Math.min(tech, techMax);
+  let fund = null; const fundMax = 25;
+  if (!fundMissing) { fund = 0; if (f.pe != null && f.pe > 0 && f.pe <= 25) fund += 8; if (f.pb != null && f.pb <= 2) fund += 5; if (f.dy != null && f.dy >= 3) fund += 6; if (f.revYoy != null && f.revYoy > 0) fund += 6; fund = Math.min(fund, fundMax); }
+  let chipS = null; const chipMax = 20;
+  if (chip.ok && instNet != null) { chipS = 0; if (instNet > 0) chipS += 10; if (chip.foreign > 0) chipS += 4; if (!marginUp) chipS += 6; chipS = Math.min(chipS, chipMax); }
+  let riskS = 20; const riskMax = 20;
+  if (belowMa20) riskS -= 8; if (rsi != null && rsi >= 75) riskS -= 8; if (distSup != null && distSup > 10) riskS -= 5; if (distRes != null && distRes >= 0 && distRes < 5) riskS -= 4; if (instNet != null && instNet < 0) riskS -= 3;
+  riskS = Math.max(0, Math.min(riskMax, riskS));
+  // 正規化：資料不足的面向不計入分母（避免無資料而被不公平歸零），但會以 hardLimit 限制最高評級
+  const availMax = techMax + riskMax + (fund != null ? fundMax : 0) + (chipS != null ? chipMax : 0);
+  const total = Math.round((tech + riskS + (fund || 0) + (chipS || 0)) / availMax * 100);
+
+  let grade, label;
+  if (total >= 80) { grade = "A"; label = "條件優良"; }
+  else if (total >= 65) { grade = "B"; label = "條件良好"; }
+  else if (total >= 40) { grade = "C"; label = "條件普通"; }
+  else if (total >= 25) { grade = "D"; label = "條件偏弱"; }
+  else { grade = "E"; label = "條件不足"; }
+  if (hardLimit && (grade === "A" || grade === "B")) { grade = "C"; label = "條件普通（資料不足，評級受限）"; }
+  const screen = (grade === "A" || grade === "B") ? "可分批觀察" : grade === "C" ? "觀察" : grade === "D" ? "偏弱觀望" : "不宜進場";
+
+  // 最低輸出保證 (item 九)
+  if (noTech) pass.length = 0, pass.push("資料不足，僅能做初步觀察，不建議依此結果進場。");
+  while (pass.length < 2) { const fl = ["技術面尚未出現明顯破壞訊號，可持續觀察是否轉強。", "可等待更明確的進場訊號（站回均線、量能放大）再評估。"]; const x = fl.find((s) => !pass.includes(s)); if (!x) break; pass.push(x); }
+  while (risks.length < 2) { const fl = ["整體趨勢尚未明確轉強，不宜單筆重壓。", "突發消息 / 財報 / 政策變化難以預測，需控制部位。"]; const x = fl.find((s) => !risks.includes(s)); if (!x) break; risks.push(x); }
+
+  // 動態結論 + 決策摘要補充
+  let conclusion, decNote;
+  if (d.veto) { conclusion = "目前 RSI 偏高、已觸發一票否決，屬「過熱不宜追高」。若已持有可續抱觀察；尚未進場者建議等待回落接近支撐再分批。"; decNote = "RSI 過熱已觸發一票否決，最高評級限制為 C，不宜追高。"; }
+  else if (noTech) { conclusion = "資料不足，僅能做初步觀察，不建議依此結果進場。"; decNote = "技術 / 基本面資料不足，僅能初步觀察，不宜進場。"; }
+  else if (belowMa20 && rsi != null && rsi < 65) { conclusion = `目前屬於「可觀察但不宜急買」。雖然 RSI ${fmt(rsi, 0)} 已回到健康區間、追高風險下降，但股價仍跌破 MA20、趨勢尚未修復；若重新站回均線並量能配合，再考慮分批觀察。`; decNote = "RSI 位於健康區間，但股價跌破 MA20、趨勢尚未修復，仍需等待轉強訊號。"; }
+  else if (belowMa20) { conclusion = "股價跌破 MA20、趨勢轉弱，建議先觀察是否重新站回均線再評估。"; decNote = "股價跌破 MA20，短線趨勢轉弱，建議先觀察是否重新站回均線。"; }
+  else if (fundMissing || a.market !== "TW") { conclusion = "技術面尚可，但基本面 / 籌碼面資料不足，僅能做初步觀察，不建議據此積極進場。"; decNote = "由於基本面 / 籌碼面資料不足，目前不適合給出積極買進結論。"; }
+  else if (grade === "A" || grade === "B") { conclusion = "各面向條件相對占優，可分批觀察、避免一次重壓，並留意均線與量能變化。"; decNote = "各面向條件占優，可分批觀察、避免一次重壓。"; }
+  else { conclusion = "條件普通，建議分批觀察、貼近支撐再評估，避免追高。"; decNote = "條件普通，建議分批觀察、貼近支撐再評估。"; }
+
+  return { cat, grade, label, total, screen, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax }, pass, risks, missing, veto, hardLimit, conclusion, decNote };
+}
+
 /* ---------- 文字段落 ---------- */
 function fundamentalExplain(fund, market) {
   if (market !== "TW") return "美股基本面（EPS / P/E / P/B / 殖利率 / 營收）純前端版資料不足，未硬推估；完整基本面建議搭配券商或官方資料。";
@@ -450,12 +544,22 @@ function renderResult(a, meta) {
   let hold = "";
   if (a.holding) { const h = a.holding, cls = h.ret >= 0 ? "pnl-up" : "pnl-down"; hold = `<div class="holding"><b>💼 我的持股</b>　成本 ${fmt(h.cost)}　股數 ${fmt(h.qty, 0)}　市值 ${fmt(h.marketValue)}　<span class="${cls}">報酬 ${fmt(h.ret)}%／損益 ${fmt(h.pnl)}</span>　建議：<b>${esc(h.suggestion)}</b></div>`; }
 
-  const cat = classifyCategory(a);
+  const L = evaluateStockLogic(a);
   const vetoLine = d.veto ? `<p class="veto">🚫 一票否決：${esc(d.vetoReason)}，已下修為「${esc(d.action)}」。</p>` : "";
-  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p>${vetoLine}<p class="op">${esc(d.operation)}</p></div>`;
-  const selection = `<div class="block selection"><h4>🧮 選股邏輯</h4>
-      <p>分類分流：<span class="cat-badge cat-${cat === "資料不足" ? "na" : ""}">${esc(cat)}</span>　｜一票否決（RSI≥70）：<b>${d.veto ? "已觸發 ✋" : "未觸發"}</b></p>
-      <p class="exp">${esc(categoryNote(cat))}</p></div>`;
+  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p>${vetoLine}<p class="op">${esc(d.operation)}</p><p class="sl-note">📌 ${esc(L.decNote)}</p></div>`;
+  const fmtSub = (v, max) => v == null ? "資料不足" : `${v} / ${max}`;
+  const liArr = (arr) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
+  const selection = `<div class="block selection">
+      <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
+      <p>標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
+      <p class="sl-sub">分數拆解 — 基本面：${fmtSub(L.sub.fund, L.sub.fundMax)}｜技術面：${fmtSub(L.sub.tech, L.sub.techMax)}｜籌碼面：${fmtSub(L.sub.chip, L.sub.chipMax)}｜風險控制：${fmtSub(L.sub.risk, L.sub.riskMax)}</p>
+      <div class="sl-grid">
+        <div class="sl-pass"><b>🟢 支持觀察理由</b><ul>${liArr(L.pass)}</ul></div>
+        <div class="sl-risk"><b>🔴 扣分 / 風險理由</b><ul>${liArr(L.risks)}</ul></div>
+      </div>
+      ${L.missing.length ? `<div class="sl-miss"><b>⚠ 資料不足</b><ul>${liArr(L.missing)}</ul></div>` : ""}
+      <div class="sl-veto"><b>🚫 一票否決</b><ul>${L.veto.length ? liArr(L.veto) : "<li>未觸發</li>"}</ul></div>
+      <p class="exp">${esc(categoryNote(L.cat))}</p></div>`;
 
   const fundList = m === "TW" ? [
     `EPS（近四季合計）：${f.eps != null ? fmt(f.eps, 2) : "資料不足"}`, `本益比 P/E：${f.pe != null ? fmt(f.pe, 1) : "資料不足"}`, `股價淨值比 P/B：${f.pb != null ? fmt(f.pb, 2) : "資料不足"}`,
