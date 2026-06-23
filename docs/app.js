@@ -490,60 +490,60 @@ function holdingPnl(price, cost, qty) {
   return { cost, qty, marketValue: price * qty, ret, pnl, suggestion, notes };
 }
 
-/* ---------- 浮動股價：自動更新（全域單一 timer） ---------- */
-let GTIMER = null;
+/* ---------- 浮動股價：自動更新（全域單一 timer，單一結果模型） ---------- */
+let GTIMER = null, CUR = null, SEQ = 0;
 function stopAuto() { if (GTIMER) { clearInterval(GTIMER); GTIMER = null; } }
-function setAuto(card, ms) {
-  stopAuto();
-  if (ms > 0) GTIMER = setInterval(() => { if (!document.body.contains(card)) { stopAuto(); return; } refreshCard(card); }, ms);
-}
+function setGlobalAuto(ms) { stopAuto(); if (ms > 0) GTIMER = setInterval(() => { if (!CUR || !$("centerResult").querySelector(".result")) { stopAuto(); return; } refreshCurrent(SEQ, false); }, ms); }
 window.addEventListener("beforeunload", stopAuto);
 
-/* ---------- 主流程 ---------- */
+/* ---------- 主流程：單一最新結果，分流到 中央 / 右側 / 底部 三欄 ---------- */
+function clearResult(loadingMsg) {
+  stopAuto();
+  const hub = $("centerHub"); if (hub) hub.style.display = "none";
+  $("centerResult").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
+  $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
+}
 async function analyze(symbol, market, cost, qty) {
   symbol = String(symbol || "").trim().toUpperCase();
-  stopAuto();                                   // 重新分析 → 清掉舊 timer
-  const card = document.createElement("div"); card.className = "card result";
-  card.innerHTML = `<div class="muted">分析 ${esc(market)} ${esc(symbol)} 中…</div>`;
-  $("results").prepend(card);
-  if (market === "TW" && !TW_RE.test(symbol)) { card.innerHTML = `<div class="err">⚠️ 台股代號格式不正確（例 2330）</div>`; return; }
-  if (market === "US" && !US_RE.test(symbol)) { card.innerHTML = `<div class="err">⚠️ 美股代號格式不正確（例 AAPL）</div>`; return; }
-  card._params = { symbol, market, cost: parseFloat(cost) || null, qty: parseFloat(qty) || null };
-  card._autoVal = "off"; card._lastClose = null;
-  await refreshCard(card, true);
+  const seq = ++SEQ; stopAuto();
+  if (market === "TW" && !TW_RE.test(symbol)) { clearResult(); $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ 台股代號格式不正確（例 2330）</div></div>`; return; }
+  if (market === "US" && !US_RE.test(symbol)) { clearResult(); $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ 美股代號格式不正確（例 AAPL）</div></div>`; return; }
+  CUR = { symbol, market, cost: parseFloat(cost) || null, qty: parseFloat(qty) || null, autoVal: "off", lastClose: null };
+  clearResult(`分析 ${market} ${symbol} 中…`);
+  await refreshCurrent(seq, true);
 }
-// 股票快查永遠只顯示最新一次：開始查詢前先停止上一筆自動更新並清空舊結果（不 append 殘留）
-function clearResults() { stopAuto(); $("results").innerHTML = ""; }
-
-async function refreshCard(card, isFirst) {
-  const p = card._params;
-  const s = card.querySelector(".upd-status"); if (s) s.textContent = "更新中…";
+async function refreshCurrent(seq, isFirst) {
+  if (seq == null) seq = SEQ;
+  const p = CUR; if (!p) return;
+  const st = $("centerResult").querySelector(".upd-status"); if (st) st.textContent = "更新中…";
   try {
     const a = p.market === "TW" ? await analyzeTW(p.symbol) : await analyzeUS(p.symbol);
+    if (seq !== SEQ) return;                       // 已被新查詢取代 → 丟棄（避免持股診斷競態）
     a.decision = decide(a.ind, a.fund, a.market);
     a.holding = holdingPnl(a.ind.close, p.cost, p.qty);
     let initView = null;
-    const oldCv = card.querySelector(".kline canvas, canvas.kline");
+    const oldCv = $("centerResult").querySelector("canvas.kline");
     if (oldCv && oldCv._view) initView = { count: oldCv._view.count, endOffset: oldCv._barsLen - oldCv._view.end };
-    const prevClose = card._lastClose;
-    card.innerHTML = renderResult(a, { updatedAt: nowStamp(), autoVal: card._autoVal });
-    card._lastClose = a.ind.close;
-    const wrap = card.querySelector(".kline-wrap");
+    const prevClose = p.lastClose;
+    const R = renderResult(a, { updatedAt: nowStamp(), autoVal: p.autoVal });
+    $("centerResult").innerHTML = R.center; $("rightResult").innerHTML = R.right; $("bottomResult").innerHTML = R.bottom;
+    p.lastClose = a.ind.close;
+    const wrap = $("centerResult").querySelector(".kline-wrap");
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
-    setupCardControls(card);
-    if (!isFirst && prevClose != null && a.ind.close != null && a.ind.close !== prevClose) flashPrice(card, a.ind.close > prevClose);
+    setupCurControls();
+    if (!isFirst && prevClose != null && a.ind.close != null && a.ind.close !== prevClose) flashCur(a.ind.close > prevClose);
   } catch (e) {
-    if (e.message === "EMPTY") { const msg = "查無最新股價資料，請確認股票代號或稍後再試。"; isFirst ? (card.innerHTML = `<div class="err">⚠️ ${msg}</div>`) : setUpdErr(card, msg); }
-    else { const msg = isFirst ? "資料更新失敗，請稍後重試。" : "更新失敗，請稍後再試。"; isFirst ? (card.innerHTML = `<div class="err">⚠️ ${esc(e.message || msg)}</div>`) : setUpdErr(card, msg); }
+    if (seq !== SEQ) return;
+    const msg = e.message === "EMPTY" ? "查無最新股價資料，請確認股票代號或稍後再試。" : (isFirst ? "資料更新失敗，請稍後重試。" : "更新失敗，請稍後再試。");
+    if (isFirst) { $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ ${esc(msg)}</div></div>`; $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = ""; }
+    else { const st2 = $("centerResult").querySelector(".upd-status"); if (st2) { st2.textContent = msg; st2.classList.add("upd-err"); } }
   }
 }
-function setUpdErr(card, msg) { const s = card.querySelector(".upd-status"); if (s) { s.textContent = msg; s.classList.add("upd-err"); } }
-function flashPrice(card, up) { const px = card.querySelector(".px"); if (!px) return; px.classList.remove("flash-up", "flash-down"); void px.offsetWidth; px.classList.add(up ? "flash-up" : "flash-down"); setTimeout(() => px.classList.remove("flash-up", "flash-down"), 800); }
-
-function setupCardControls(card) {
-  const btn = card.querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => refreshCard(card));
-  const sel = card.querySelector(".upd-auto");
-  if (sel) { sel.value = card._autoVal; sel.addEventListener("change", () => { card._autoVal = sel.value; const ms = { off: 0, "30": 30000, "60": 60000, "300": 300000 }[sel.value] || 0; setAuto(card, ms); }); }
+function flashCur(up) { const px = $("centerResult").querySelector(".px"); if (!px) return; px.classList.remove("flash-up", "flash-down"); void px.offsetWidth; px.classList.add(up ? "flash-up" : "flash-down"); setTimeout(() => px.classList.remove("flash-up", "flash-down"), 800); }
+function setupCurControls() {
+  const btn = $("centerResult").querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => refreshCurrent(SEQ, false));
+  const sel = $("centerResult").querySelector(".upd-auto");
+  if (sel && CUR) { sel.value = CUR.autoVal; sel.addEventListener("change", () => { CUR.autoVal = sel.value; setGlobalAuto({ off: 0, "30": 30000, "60": 60000, "300": 300000 }[sel.value] || 0); }); }
 }
 
 function renderResult(a, meta) {
@@ -586,17 +586,16 @@ function renderResult(a, meta) {
   const breakdown = L.isETF
     ? `技術面：${L.sub.tech} / ${L.sub.techMax}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}｜價格位置：${L.sub.pos} / ${L.sub.posMax}`
     : `基本面：${subLabel(L.sub.fund, L.sub.fundMax)}｜技術面：${L.sub.tech} / ${L.sub.techMax}｜籌碼面：${subLabel(L.sub.chip, L.sub.chipMax)}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}`;
-  const selection = `<div class="block selection">
+  // 選股邏輯「摘要」放中央；支持/風險/資料不足等明細放底部
+  const selSummary = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p>標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
       <p class="sl-sub">分數拆解 — ${breakdown}</p>
-      <div class="sl-grid">
-        <div class="sl-pass"><b>🟢 支持觀察理由</b><ul>${liArr(L.pass)}</ul></div>
-        <div class="sl-risk"><b>🔴 扣分 / 風險理由</b><ul>${liArr(L.risks)}</ul></div>
-      </div>
-      ${L.missing.length ? `<div class="sl-miss"><b>⚠ 資料不足</b><ul>${liArr(L.missing)}</ul></div>` : ""}
-      ${L.dataNotes.length ? `<div class="sl-info"><b>ℹ️ 資料源說明</b><ul>${liArr(L.dataNotes)}</ul></div>` : ""}
       <p class="exp">${esc(categoryNote(L.cat))}</p></div>`;
+  const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
+    + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><ul>${liArr(L.risks)}</ul></div>`
+    + (L.missing.length ? `<div class="block sl-miss"><h4>⚠ 資料不足</h4><ul>${liArr(L.missing)}</ul></div>` : "")
+    + (L.dataNotes.length ? `<div class="block sl-info"><h4>ℹ️ 資料源說明</h4><ul>${liArr(L.dataNotes)}</ul></div>` : "");
 
   let fundamental;
   if (L.cat === "ETF") {
@@ -645,7 +644,11 @@ function renderResult(a, meta) {
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></div>`;
 
-  return header + hold + decision + limitBlock + selection + `<div class="aspects">${fundamental}${technical}${chip}</div>` + kline + `<div class="aspects two">${buy}${nobuy}</div>` + zones + concl + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p>`;
+  // 三欄分流：中央=現價/決策/K線/選股摘要/結論；右側=基本面/技術面/籌碼面/資料來源；底部=支持/風險/價格區間
+  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}${concl}</div>`;
+  const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}</div>`;
+  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${reasonsBottom}${zones}</div><p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
+  return { center, right, bottom };
 }
 
 /* ===================== 黃金價格分析 ===================== */
@@ -875,6 +878,7 @@ document.querySelectorAll("[data-act]").forEach((el) => {
     const act = el.getAttribute("data-act");
     if (act === "twnews") openModal("modal-twnews");
     else if (act === "usnews") openModal("modal-usnews");
+    else if (act === "focus-symbol") { const q = $("query"); if (q) q.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => $("symbol").focus(), 320); }
     else if (act === "gold") { openModal("modal-gold"); ensureGold(); requestAnimationFrame(() => { const cv = $("goldBody").querySelector("canvas.kline"); if (cv && cv._redraw) cv._redraw(); }); }
   };
   el.addEventListener("click", handler);
@@ -903,12 +907,20 @@ document.querySelectorAll("[data-news]").forEach((btn) => btn.addEventListener("
     else openSearch("https://finance.yahoo.com/quote/" + encodeURIComponent(s));
   }
 }));
-$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) { clearResults(); analyze(s, $("market").value); } });
+$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value); });
 $("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
 $("save").addEventListener("click", () => { const s = $("h-symbol").value.trim().toUpperCase(); if (!s) return; const m = $("h-market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });
 $("h-symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("save").click(); });
-$("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; clearResults(); analyze(s, m, h.cost, h.qty); } });
-$("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { toast("尚未加入持股，請先在上方加入持股。"); return; } clearResults(); list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
+$("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; analyze(s, m, h.cost, h.qty); } });
+$("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { toast("尚未加入持股，請先在上方加入持股。"); return; } list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
 $("clearAll").addEventListener("click", () => { if (confirm("清空我的持股？")) setHoldings([]); });
 
+// 右側黃金現價小卡（只抓 Gold-API 現價，點卡片開啟完整黃金分析 modal）
+async function loadGoldMini() {
+  const el = $("goldMiniBody"); if (!el) return;
+  try { const g = await fetchGoldSpot(); el.innerHTML = `<div class="gm-price">$${fmt(g.price)}</div><div class="gm-sub">XAU/USD ・ USD/oz</div>`; }
+  catch { el.innerHTML = `<span class="muted">金價暫時無法取得，點下方開啟分析。</span>`; }
+}
+
 renderHoldings();
+loadGoldMini();
