@@ -242,13 +242,45 @@ function drawKline(canvas, bars, view, support, resistance) {
   const mark = (idx, val, up) => { const x = padL + slot * idx + slot / 2, y = yP(val); ctx.fillStyle = up ? "#ef8a4d" : "#4dd0a0"; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 6.3); ctx.fill(); ctx.font = "10px system-ui"; ctx.textAlign = idx > data.length / 2 ? "right" : "left"; ctx.fillText((up ? "高 " : "低 ") + val.toFixed(1), idx > data.length / 2 ? x - 5 : x + 5, up ? y - 5 : y + 11); ctx.textAlign = "left"; };
   if (data.length > 2) { mark(hi, data[hi].h, true); mark(lo, data[lo].l, false); }
 }
-function setupKline(wrap, bars, support, resistance, initial, defaultCount) {
+function drawGoldLine(canvas, bars, view, support, resistance) {
+  if (!canvas || !bars || bars.length < 2) return;
+  canvas._bars = bars;
+  const end = Math.min(bars.length, Math.max(view.count, view.end)), start = Math.max(0, end - view.count);
+  const data = bars.slice(start, end); if (data.length < 2) return;
+  const closes = bars.map((b) => b.c);
+  const ma20 = smaSeries(closes, 20).slice(start, end), ma60 = smaSeries(closes, 60).slice(start, end), ma200 = smaSeries(closes, 200).slice(start, end);
+  const cl = data.map((b) => b.c);
+  const dpr = window.devicePixelRatio || 1, cssW = canvas.clientWidth || 600, cssH = 340;
+  canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+  const ctx = canvas.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, cssW, cssH);
+  const padL = 8, padT = 12, padB = 22, padR = 60, H = cssH - padT - padB, W = cssW - padL - padR, n = data.length, slot = W / (n - 1);
+  const inclS = support != null, inclR = resistance != null;
+  let pMin = Math.min(...cl, inclS ? support : Infinity, inclR ? resistance : Infinity), pMax = Math.max(...cl, inclS ? support : -Infinity, inclR ? resistance : -Infinity);
+  const pad = (pMax - pMin) * 0.08 || 1; pMin -= pad; pMax += pad;
+  const yP = (v) => padT + (pMax - v) / (pMax - pMin) * H, xAt = (i) => padL + slot * i;
+  ctx.strokeStyle = "#1f2632"; ctx.fillStyle = "#8a93a6"; ctx.font = "10px system-ui"; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) { const v = pMax - (pMax - pMin) * i / 4, y = yP(v); ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + W, y); ctx.stroke(); ctx.fillText(v.toFixed(0), padL + W + 4, y + 3); }
+  ctx.fillText("USD/oz", padL + W + 4, padT - 2);
+  const ticks = Math.min(5, n - 1);
+  for (let t = 0; t <= ticks; t++) { const i = Math.round(t / ticks * (n - 1)), lbl = data[i].date.slice(2).replace(/-/g, "/"); ctx.textAlign = t === 0 ? "left" : (t === ticks ? "right" : "center"); ctx.fillText(lbl, xAt(i), cssH - 7); }
+  ctx.textAlign = "left";
+  ctx.setLineDash([4, 3]);
+  if (inclS) { ctx.strokeStyle = "#2ebd6b"; ctx.beginPath(); ctx.moveTo(padL, yP(support)); ctx.lineTo(padL + W, yP(support)); ctx.stroke(); ctx.fillStyle = "#2ebd6b"; ctx.fillText("Support " + support.toFixed(0), padL + 2, yP(support) - 3); }
+  if (inclR) { ctx.strokeStyle = "#ff7a45"; ctx.beginPath(); ctx.moveTo(padL, yP(resistance)); ctx.lineTo(padL + W, yP(resistance)); ctx.stroke(); ctx.fillStyle = "#ff7a45"; ctx.fillText("Resistance " + resistance.toFixed(0), padL + 2, yP(resistance) + 11); }
+  ctx.setLineDash([]);
+  const line = (arr, color, w) => { ctx.strokeStyle = color; ctx.lineWidth = w; ctx.beginPath(); let st = false; arr.forEach((v, i) => { if (v == null) return; const x = xAt(i), y = yP(v); if (!st) { ctx.moveTo(x, y); st = true; } else ctx.lineTo(x, y); }); ctx.stroke(); };
+  line(ma200, "#7a8aa0", 1.1); line(ma60, "#b388ff", 1.3); line(ma20, "#4da3ff", 1.3); line(cl, "#ffd24d", 2.2);
+  let hi = 0, lo = 0; for (let i = 1; i < cl.length; i++) { if (cl[i] > cl[hi]) hi = i; if (cl[i] < cl[lo]) lo = i; }
+  const mark = (i, up) => { const x = xAt(i), y = yP(cl[i]); ctx.fillStyle = up ? "#ef8a4d" : "#4dd0a0"; ctx.beginPath(); ctx.arc(x, y, 3, 0, 6.3); ctx.fill(); ctx.textAlign = i > n / 2 ? "right" : "left"; ctx.fillText((up ? "高 " : "低 ") + cl[i].toFixed(0), i > n / 2 ? x - 5 : x + 5, up ? y - 6 : y + 12); ctx.textAlign = "left"; };
+  mark(hi, true); mark(lo, false);
+}
+function setupKline(wrap, bars, support, resistance, initial, defaultCount, lineMode) {
   const canvas = wrap.querySelector("canvas");
   const view = { count: Math.min(defaultCount || 60, bars.length), end: bars.length };
   if (initial) { view.count = Math.min(bars.length, Math.max(10, initial.count || 60)); view.end = Math.max(view.count, Math.min(bars.length, bars.length - (initial.endOffset || 0))); }
   canvas._view = view; canvas._barsLen = bars.length;
   const clamp = () => { view.count = Math.max(10, Math.min(bars.length, Math.round(view.count))); view.end = Math.max(view.count, Math.min(bars.length, Math.round(view.end))); };
-  const redraw = () => { clamp(); drawKline(canvas, bars, view, support, resistance); const l = wrap.querySelector(".kl-range"); if (l) l.textContent = view.count + " 日"; };
+  const redraw = () => { clamp(); (lineMode ? drawGoldLine : drawKline)(canvas, bars, view, support, resistance); const l = wrap.querySelector(".kl-range"); if (l) l.textContent = view.count + " 根"; };
   canvas._redraw = redraw;
   const slot = () => (canvas.clientWidth - 62) / view.count;
   const center = () => { const r = canvas.getBoundingClientRect(); return r.left + r.width / 2; };
@@ -432,7 +464,7 @@ const GOLD_EXT = [
 ];
 let GOLD_TIMER = null, GOLD_AUTO = "off", GOLD_LASTPRICE = null;
 function stopGoldAuto() { if (GOLD_TIMER) { clearInterval(GOLD_TIMER); GOLD_TIMER = null; } }
-function setGoldAuto(ms) { stopGoldAuto(); if (ms > 0) GOLD_TIMER = setInterval(() => { if (!$("gold")) { stopGoldAuto(); return; } refreshGold(); }, ms); }
+function setGoldAuto(ms) { stopGoldAuto(); if (ms > 0) GOLD_TIMER = setInterval(() => { if (!$("goldBody")) { stopGoldAuto(); return; } refreshGold(); }, ms); }
 window.addEventListener("beforeunload", stopGoldAuto);
 
 async function fetchGoldSpot() {
@@ -553,7 +585,7 @@ async function refreshGold(isFirst) {
     body.innerHTML = renderGold(g, { updatedAt: nowStamp(), autoVal: GOLD_AUTO });
     GOLD_LASTPRICE = g.current;
     const wrap = body.querySelector(".kline-wrap");
-    if (wrap) setupKline(wrap, g.bars, g.ind.support, g.ind.resistance, initView, Math.min(252, g.bars.length));
+    if (wrap) setupKline(wrap, g.bars, g.ind.support, g.ind.resistance, initView, Math.min(252, g.bars.length), true);
     setupGoldControls();
     if (!isFirst && prev != null && g.current !== prev) { const px = body.querySelector(".px"); if (px) { px.classList.add(g.current > prev ? "flash-up" : "flash-down"); setTimeout(() => px.classList.remove("flash-up", "flash-down"), 800); } }
   } catch (e) {
@@ -600,11 +632,11 @@ function renderGold(g, meta) {
 
   let chart;
   if (g.histAvailable) {
-    chart = `<div class="block kline-wrap"><h4>⑤ 歷年金價圖　<small>美元黃金期貨 · 電腦：滾輪縮放／拖曳　手機：雙指縮放／單指平移</small></h4>
+    chart = `<div class="block kline-wrap"><h4>⑤ 歷年金價圖（曲線）　<small>USD/oz · 電腦：滾輪縮放／拖曳　手機：雙指縮放／單指平移</small></h4>
       <div class="kl-tools"><button data-kl="in">＋ 放大</button><button data-kl="out">－ 縮小</button><button data-kl="reset">⟲ 重設</button>
         <button data-kl="21">1M</button><button data-kl="63">3M</button><button data-kl="126">6M</button><button data-kl="252">1Y</button><button data-kl="756">3Y</button><button data-kl="1260">5Y</button><button data-kl="max">Max</button><span class="kl-range"></span></div>
       <canvas class="kline"></canvas>
-      <div class="legend"><span class="lg up">紅 漲</span><span class="lg dn">綠 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div>
+      <div class="legend"><span class="lg gp">Gold Price</span><span class="lg m20">MA20</span><span class="lg m60">MA60</span><span class="lg sup">Support</span><span class="lg res">Resistance</span></div>
       <p class="exp">⚠ FinMind 台灣黃金期貨 GDF 為美元計價黃金期貨，僅作為國際金價歷史走勢近似，不等於 XAU/USD 現貨逐筆歷史資料。</p></div>`;
   } else {
     const ext = GOLD_EXT.map(([t, u]) => `<a href="${u}">${esc(t)}</a>`).join(" ・ ");
@@ -635,15 +667,20 @@ let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setT
 
 /* ---------- 事件 ---------- */
 function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGold(); }
-function goldEntry() { $("gold").scrollIntoView({ behavior: "smooth", block: "start" }); ensureGold(); }
-document.querySelectorAll(".feature").forEach((b) => b.addEventListener("click", () => { const id = b.getAttribute("data-goto"); const t = $(id); if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); if (id === "gold") { ensureGold(); return; } const inp = t.querySelector("input,select"); if (inp) setTimeout(() => inp.focus(), 300); } }));
-function scrollFocus(secId, inpId) { $(secId).scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => { const i = $(inpId); if (i) i.focus(); }, 320); }
+
+/* ---------- Modal 彈窗 ---------- */
+function openModal(id) { const m = $(id); if (!m) return; m.classList.add("open"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("modal-open"); const inp = m.querySelector("input"); if (inp) setTimeout(() => inp.focus(), 70); }
+function closeModal(m) { m.classList.remove("open"); m.setAttribute("aria-hidden", "true"); if (!document.querySelector(".modal.open")) document.body.classList.remove("modal-open"); }
+document.querySelectorAll(".modal").forEach((m) => m.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => closeModal(m))));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".modal.open").forEach(closeModal); });
+
+document.querySelectorAll(".feature").forEach((b) => b.addEventListener("click", () => { const t = $(b.getAttribute("data-goto")); if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); const inp = t.querySelector("input,select"); if (inp) setTimeout(() => inp.focus(), 300); } }));
 document.querySelectorAll("[data-act]").forEach((el) => {
   const handler = () => {
     const act = el.getAttribute("data-act");
-    if (act === "twnews") scrollFocus("twnews", "tw-news-sym");
-    else if (act === "usnews") scrollFocus("usnews", "us-news-sym");
-    else if (act === "gold") goldEntry();
+    if (act === "twnews") openModal("modal-twnews");
+    else if (act === "usnews") openModal("modal-usnews");
+    else if (act === "gold") { openModal("modal-gold"); ensureGold(); requestAnimationFrame(() => { const cv = $("goldBody").querySelector("canvas.kline"); if (cv && cv._redraw) cv._redraw(); }); }
   };
   el.addEventListener("click", handler);
   el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handler(); } });

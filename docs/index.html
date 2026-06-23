@@ -52,32 +52,6 @@
       </div>
     </section>
 
-    <!-- 台股相關新聞搜尋 -->
-    <section class="card" id="twnews">
-      <h2>📰 台股相關新聞搜尋</h2>
-      <p class="panel-sub">輸入台股代號，查詢個股新聞、財報、法人與市場消息（外部搜尋，新分頁開啟）。</p>
-      <div class="row"><input id="tw-news-sym" type="text" placeholder="台股代號（4~6 位數字，例 2330、2454、2317）" maxlength="6" autocomplete="off" /></div>
-      <div class="row newsbtns">
-        <button class="ghost" data-news="tw" data-kind="news">搜尋台股新聞</button>
-        <button class="ghost" data-news="tw" data-kind="fin">搜尋財報 / 基本面</button>
-        <button class="ghost" data-news="tw" data-kind="chip">搜尋法人 / 籌碼</button>
-        <button class="ghost" data-news="tw" data-kind="yahoo">Yahoo 股市</button>
-      </div>
-    </section>
-
-    <!-- 美股相關新聞搜尋 -->
-    <section class="card" id="usnews">
-      <h2>🗞️ 美股相關新聞搜尋</h2>
-      <p class="panel-sub">輸入美股代號，查詢公司新聞、財報、財測與市場消息（外部搜尋，新分頁開啟）。</p>
-      <div class="row"><input id="us-news-sym" type="text" placeholder="美股代號（例 AAPL、NVDA、MSFT、BRK.B）" maxlength="10" autocomplete="off" /></div>
-      <div class="row newsbtns">
-        <button class="ghost" data-news="us" data-kind="news">搜尋美股新聞</button>
-        <button class="ghost" data-news="us" data-kind="fin">搜尋財報 / Earnings</button>
-        <button class="ghost" data-news="us" data-kind="analyst">搜尋分析師消息</button>
-        <button class="ghost" data-news="us" data-kind="yahoo">Yahoo Finance</button>
-      </div>
-    </section>
-
     <!-- 我的持股主卡 -->
     <section class="panel solo" id="myholdings">
       <div class="panel-left wide">
@@ -98,18 +72,57 @@
       </div>
     </section>
 
-    <!-- 黃金價格分析 -->
-    <section class="card" id="gold">
-      <h2>🥇 黃金價格分析</h2>
-      <div id="goldBody"><button id="goldLoad" class="primary-lg">載入金價分析</button></div>
-    </section>
-
     <section id="results"></section>
   </main>
 
   <footer>
-    <p>資料來源：FinMind 開放 API。以上僅為資料整理與趨勢分析，不構成投資建議。</p>
+    <p>資料來源：FinMind 開放 API、Gold-API.com。以上僅為資料整理與趨勢分析，不構成投資建議。</p>
   </footer>
+
+  <!-- Modal：台股相關新聞搜尋 -->
+  <div class="modal" id="modal-twnews" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="台股相關新聞搜尋">
+      <div class="modal-head"><h3>📰 台股相關新聞搜尋</h3><button class="modal-x" data-close aria-label="關閉">✕</button></div>
+      <div class="modal-body">
+        <p class="panel-sub">輸入台股代號，查詢個股新聞、財報、法人與市場消息（外部搜尋，新分頁開啟）。</p>
+        <div class="row"><input id="tw-news-sym" type="text" placeholder="台股代號（4~6 位數字，例 2330、2454、2317）" maxlength="6" autocomplete="off" /></div>
+        <div class="row newsbtns">
+          <button class="ghost" data-news="tw" data-kind="news">搜尋台股新聞</button>
+          <button class="ghost" data-news="tw" data-kind="fin">搜尋財報 / 基本面</button>
+          <button class="ghost" data-news="tw" data-kind="chip">搜尋法人 / 籌碼</button>
+          <button class="ghost" data-news="tw" data-kind="yahoo">Yahoo 股市</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：美股相關新聞搜尋 -->
+  <div class="modal" id="modal-usnews" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="美股相關新聞搜尋">
+      <div class="modal-head"><h3>🗞️ 美股相關新聞搜尋</h3><button class="modal-x" data-close aria-label="關閉">✕</button></div>
+      <div class="modal-body">
+        <p class="panel-sub">輸入美股代號，查詢公司新聞、財報、財測與分析師消息（外部搜尋，新分頁開啟）。</p>
+        <div class="row"><input id="us-news-sym" type="text" placeholder="美股代號（例 AAPL、NVDA、MSFT、BRK.B）" maxlength="10" autocomplete="off" /></div>
+        <div class="row newsbtns">
+          <button class="ghost" data-news="us" data-kind="news">搜尋美股新聞</button>
+          <button class="ghost" data-news="us" data-kind="fin">搜尋財報 / Earnings</button>
+          <button class="ghost" data-news="us" data-kind="analyst">搜尋分析師消息</button>
+          <button class="ghost" data-news="us" data-kind="yahoo">Yahoo Finance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal：黃金價格分析（大型） -->
+  <div class="modal modal-lg" id="modal-gold" aria-hidden="true">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="黃金價格分析">
+      <div class="modal-head"><h3>🥇 黃金價格分析</h3><button class="modal-x" data-close aria-label="關閉">✕</button></div>
+      <div class="modal-body"><div id="goldBody"><button id="goldLoad" class="primary-lg">載入金價分析</button></div></div>
+    </div>
+  </div>
 
   <script src="./app.js"></script>
 </body>
