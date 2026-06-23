@@ -166,7 +166,8 @@ function evaluateStockLogic(a) {
   const marginUp = chip.ok && chip.marginChg != null && chip.marginBal != null && chip.marginChg > Math.abs(chip.marginBal) * 0.03;
   const fundMissing = f.pe == null && f.eps == null && f.revYoy == null;
 
-  const pass = [], risks = [], missing = [], veto = [];
+  const isETF = cat === "ETF", isUS = a.market !== "TW";
+  const pass = [], risks = [], missing = [], veto = [], dataNotes = [];
 
   if (rsi != null) {
     if (rsi < 40) pass.push(`RSI 目前為 ${fmt(rsi, 0)}，已脫離高檔超買區、進入修正區，短線追高風險下降，但仍需確認趨勢是否止穩。`);
@@ -187,19 +188,26 @@ function evaluateStockLogic(a) {
   if (distRes != null && distRes >= 0 && distRes < 5) risks.push("目前股價接近壓力區，容易遇到解套賣壓或短線獲利了結。");
   if (marginUp && (instNet == null || instNet <= 0)) risks.push("融資增加但法人未同步買超，需留意散戶追高風險。");
   if (instNet != null && instNet < 0) risks.push("法人近期偏賣超，籌碼面尚未轉強。");
-  if (fundMissing) risks.push("基本面資料不足，無法確認公司獲利與估值是否支撐目前股價。");
-  if (a.market !== "TW") risks.push("美股缺乏台股三大法人與融資融券資料，籌碼面無法提供加分依據。");
-
-  if (f.eps == null) missing.push("EPS 資料不足");
-  if (f.pe == null) missing.push("P/E 資料不足");
-  if (f.pb == null) missing.push("P/B 資料不足");
-  if (f.dy == null) missing.push("殖利率資料不足");
-  if (f.revYoy == null) missing.push("營收成長率資料不足");
-  if (a.market === "TW") { if (!chip.ok) missing.push("三大法人 / 融資融券資料不足"); }
-  else missing.push("美股籌碼面資料不足（無三大法人 / 融資融券）");
+  // 基本面 / 籌碼面：依分類分流（ETF 不適用個股基本面；美股為資料源限制，非公司劣勢）
+  if (isETF) {
+    dataNotes.push("ETF 類標的不適用個股 EPS / P/E / P/B / 營收成長率評分，已改以技術面與風險控制為主。");
+    if (!chip.ok) dataNotes.push("ETF 三大法人 / 融資融券資料不足，籌碼面以技術面與風險控制為主。");
+  } else if (isUS) {
+    dataNotes.push("基本面：資料源限制 — 純前端版尚未接入穩定的美股基本面資料源，EPS / P/E / P/B / 營收成長率暫不納入完整評分；屬資料源限制，非公司基本面不佳。");
+    dataNotes.push("籌碼面：資料源限制 — 美股無台股三大法人 / 融資融券格式，純前端版尚未接入機構持股 / Short Interest / 分析師評等，籌碼面保守處理（未來建 market_data_backend 才補 SEC / Finnhub / Alpha Vantage / FMP）。");
+  } else {
+    if (fundMissing) risks.push("基本面資料不足，無法確認公司獲利與估值是否支撐目前股價。");
+    if (f.eps == null) missing.push("EPS 資料不足");
+    if (f.pe == null) missing.push("P/E 資料不足");
+    if (f.pb == null) missing.push("P/B 資料不足");
+    if (f.dy == null) missing.push("殖利率資料不足");
+    if (f.revYoy == null) missing.push("營收成長率資料不足");
+    if (!chip.ok) missing.push("三大法人 / 融資融券資料不足");
+  }
 
   if (d.veto) veto.push(`${d.vetoReason}，最高評級限制為 C。`);
-  const hardLimit = !!d.veto || missing.length >= 5;
+  // 美股因基本面 / 籌碼為資料源限制，最高評級鎖 C（可觀察、不給積極布局）；ETF 以技術面評估、不受此限
+  const hardLimit = !!d.veto || isUS || (!isETF && missing.length >= 5);
 
   // 子分數
   let tech = 0; const techMax = 35;
@@ -235,13 +243,14 @@ function evaluateStockLogic(a) {
   let conclusion, decNote;
   if (d.veto) { conclusion = "目前 RSI 偏高、已觸發一票否決，屬「過熱不宜追高」。若已持有可續抱觀察；尚未進場者建議等待回落接近支撐再分批。"; decNote = "RSI 過熱已觸發一票否決，最高評級限制為 C，不宜追高。"; }
   else if (noTech) { conclusion = "資料不足，僅能做初步觀察，不建議依此結果進場。"; decNote = "技術 / 基本面資料不足，僅能初步觀察，不宜進場。"; }
-  else if (belowMa20 && rsi != null && rsi < 65) { conclusion = `目前屬於「可觀察但不宜急買」。雖然 RSI ${fmt(rsi, 0)} 已回到健康區間、追高風險下降，但股價仍跌破 MA20、趨勢尚未修復；若重新站回均線並量能配合，再考慮分批觀察。`; decNote = "RSI 位於健康區間，但股價跌破 MA20、趨勢尚未修復，仍需等待轉強訊號。"; }
+  else if (belowMa20 && rsi != null && rsi < 65) { conclusion = `目前屬於「可觀察但不宜急買」。雖然 RSI ${fmt(rsi, 0)} 已回到健康區間、追高風險下降，但股價仍跌破 MA20、趨勢尚未修復；若重新站回均線並量能配合，再考慮分批觀察。` + (isUS ? "同時純前端版缺乏完整美股基本面與籌碼資料（資料源限制，非公司劣勢），因此不適合給出積極買進結論。" : ""); decNote = "RSI 位於健康區間，但股價跌破 MA20、趨勢尚未修復，仍需等待轉強訊號。"; }
   else if (belowMa20) { conclusion = "股價跌破 MA20、趨勢轉弱，建議先觀察是否重新站回均線再評估。"; decNote = "股價跌破 MA20，短線趨勢轉弱，建議先觀察是否重新站回均線。"; }
-  else if (fundMissing || a.market !== "TW") { conclusion = "技術面尚可，但基本面 / 籌碼面資料不足，僅能做初步觀察，不建議據此積極進場。"; decNote = "由於基本面 / 籌碼面資料不足，目前不適合給出積極買進結論。"; }
+  else if (isETF) { conclusion = "ETF 類標的以技術面與風險控制評估：" + (aboveMa20 ? "目前站上均線，可分批 / 定期定額長期配置、避免單筆追高。" : "目前位於均線下方，建議等待站回均線或回測支撐再分批。"); decNote = "ETF 改以技術面與風險控制評估，適合分批 / 定期定額，不宜短線追高。"; }
+  else if (isUS) { conclusion = "技術面可參考，但純前端版缺乏完整美股基本面與籌碼資料（資料源限制，非公司劣勢），僅能初步觀察，不適合給出積極買進結論。"; decNote = "美股基本面 / 籌碼為資料源限制（非公司不佳），僅能初步觀察、不宜積極布局。"; }
   else if (grade === "A" || grade === "B") { conclusion = "各面向條件相對占優，可分批觀察、避免一次重壓，並留意均線與量能變化。"; decNote = "各面向條件占優，可分批觀察、避免一次重壓。"; }
   else { conclusion = "條件普通，建議分批觀察、貼近支撐再評估，避免追高。"; decNote = "條件普通，建議分批觀察、貼近支撐再評估。"; }
 
-  return { cat, grade, label, total, screen, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax }, pass, risks, missing, veto, hardLimit, conclusion, decNote };
+  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote };
 }
 
 /* ---------- 文字段落 ---------- */
@@ -271,7 +280,7 @@ function technicalExplain(ind) {
 }
 function buildChip(inst, margin, market) {
   if (market !== "TW" || (!inst && !margin)) {
-    return { ok: false, note: market === "TW" ? "籌碼面資料不足，純前端版本目前無法完整取得三大法人與融資融券資料。" : "美股無台股式三大法人 / 融資融券制度，純前端版籌碼面資料不足。",
+    return { ok: false, note: market === "TW" ? "籌碼面資料不足，純前端版本目前無法完整取得三大法人與融資融券資料。" : "籌碼面：資料源限制 — 美股無台股式三大法人 / 融資融券制度，純前端版尚未接入機構持股 / Short Interest / 分析師評等資料（非公司劣勢）。",
       explain: "籌碼面主要用來觀察主力資金流向，若法人持續買超且融資未過熱，通常代表籌碼較健康；若股價上漲但融資大增，則需留意散戶追高風險。" };
   }
   const o = { ok: true };
@@ -487,6 +496,8 @@ async function analyze(symbol, market, cost, qty) {
   card._autoVal = "off"; card._lastClose = null;
   await refreshCard(card, true);
 }
+// 股票快查永遠只顯示最新一次：開始查詢前先停止上一筆自動更新並清空舊結果（不 append 殘留）
+function clearResults() { stopAuto(); $("results").innerHTML = ""; }
 
 async function refreshCard(card, isFirst) {
   const p = card._params;
@@ -545,27 +556,38 @@ function renderResult(a, meta) {
   if (a.holding) { const h = a.holding, cls = h.ret >= 0 ? "pnl-up" : "pnl-down"; hold = `<div class="holding"><b>💼 我的持股</b>　成本 ${fmt(h.cost)}　股數 ${fmt(h.qty, 0)}　市值 ${fmt(h.marketValue)}　<span class="${cls}">報酬 ${fmt(h.ret)}%／損益 ${fmt(h.pnl)}</span>　建議：<b>${esc(h.suggestion)}</b></div>`; }
 
   const L = evaluateStockLogic(a);
-  const vetoLine = d.veto ? `<p class="veto">🚫 一票否決：${esc(d.vetoReason)}，已下修為「${esc(d.action)}」。</p>` : "";
+  const vetoLine = d.veto ? `<p class="veto">🛡 硬性風控（已觸發）：${esc(d.vetoReason)}，已下修為「${esc(d.action)}」。</p>` : "";
   const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p>${vetoLine}<p class="op">${esc(d.operation)}</p><p class="sl-note">📌 ${esc(L.decNote)}</p></div>`;
-  const fmtSub = (v, max) => v == null ? "資料不足" : `${v} / ${max}`;
   const liArr = (arr) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
+  const subLabel = (v, max, kind) => v != null ? `${v} / ${max}` : (L.isETF ? (kind === "fund" ? "不適用（ETF）" : "—") : (L.isUS ? "資料源限制" : "資料不足"));
+  const vetoBody = L.veto.length ? L.veto.map((v) => `<li>已觸發　原因：${esc(v)}</li>`).join("") : "<li>未觸發，尚未出現極端過熱或重大籌碼風險。</li>";
   const selection = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p>標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
-      <p class="sl-sub">分數拆解 — 基本面：${fmtSub(L.sub.fund, L.sub.fundMax)}｜技術面：${fmtSub(L.sub.tech, L.sub.techMax)}｜籌碼面：${fmtSub(L.sub.chip, L.sub.chipMax)}｜風險控制：${fmtSub(L.sub.risk, L.sub.riskMax)}</p>
+      <p class="sl-sub">分數拆解 — 基本面：${subLabel(L.sub.fund, L.sub.fundMax, "fund")}｜技術面：${L.sub.tech} / ${L.sub.techMax}｜籌碼面：${subLabel(L.sub.chip, L.sub.chipMax, "chip")}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}</p>
       <div class="sl-grid">
         <div class="sl-pass"><b>🟢 支持觀察理由</b><ul>${liArr(L.pass)}</ul></div>
         <div class="sl-risk"><b>🔴 扣分 / 風險理由</b><ul>${liArr(L.risks)}</ul></div>
       </div>
       ${L.missing.length ? `<div class="sl-miss"><b>⚠ 資料不足</b><ul>${liArr(L.missing)}</ul></div>` : ""}
-      <div class="sl-veto"><b>🚫 一票否決</b><ul>${L.veto.length ? liArr(L.veto) : "<li>未觸發</li>"}</ul></div>
+      ${L.dataNotes.length ? `<div class="sl-info"><b>ℹ️ 資料源說明</b><ul>${liArr(L.dataNotes)}</ul></div>` : ""}
+      <div class="sl-veto"><b>🛡 硬性風控</b><ul>${vetoBody}</ul></div>
       <p class="exp">${esc(categoryNote(L.cat))}</p></div>`;
 
-  const fundList = m === "TW" ? [
-    `EPS（近四季合計）：${f.eps != null ? fmt(f.eps, 2) : "資料不足"}`, `本益比 P/E：${f.pe != null ? fmt(f.pe, 1) : "資料不足"}`, `股價淨值比 P/B：${f.pb != null ? fmt(f.pb, 2) : "資料不足"}`,
-    `殖利率：${f.dy != null ? fmt(f.dy, 2) + "%" : "資料不足"}`, `營收成長率（YoY）：${f.revYoy != null ? (f.revYoy >= 0 ? "+" : "") + fmt(f.revYoy, 1) + "%" : "資料不足"}`,
-  ] : ["EPS：資料不足", "本益比 P/E：資料不足", "股價淨值比 P/B：資料不足", "殖利率：資料不足", "營收成長率（YoY）：資料不足"];
-  const fundamental = `<div class="block"><h4>② 基本面　<small>買什麼公司</small></h4>${ul(fundList)}<p class="exp">${esc(fundamentalExplain(f, m))}</p></div>`;
+  let fundamental;
+  if (L.cat === "ETF") {
+    fundamental = `<div class="block"><h4>② 基本面　<small>ETF</small></h4><p>ETF 不適用單一公司 EPS / P/E / P/B / 營收成長率評分。</p>`
+      + `<p class="exp">ETF 評估改以技術面、RSI、支撐 / 壓力、價格位置、是否過熱、是否適合分批與長期配置為主。</p></div>`;
+  } else if (m !== "TW") {
+    fundamental = `<div class="block"><h4>② 基本面　<small>資料源限制</small></h4><p>基本面：<b>資料源限制</b></p>`
+      + `<p class="exp">目前純前端版本尚未接入穩定的美股基本面資料源，因此 EPS、P/E、P/B、營收成長率暫不納入完整評分。這是資料源限制，不代表該公司基本面不佳。未來若建立 market_data_backend，才會補 SEC / Finnhub / Alpha Vantage / FMP 等資料源。</p></div>`;
+  } else {
+    const fundList = [
+      `EPS（近四季合計）：${f.eps != null ? fmt(f.eps, 2) : "資料不足"}`, `本益比 P/E：${f.pe != null ? fmt(f.pe, 1) : "資料不足"}`, `股價淨值比 P/B：${f.pb != null ? fmt(f.pb, 2) : "資料不足"}`,
+      `殖利率：${f.dy != null ? fmt(f.dy, 2) + "%" : "資料不足"}`, `營收成長率（YoY）：${f.revYoy != null ? (f.revYoy >= 0 ? "+" : "") + fmt(f.revYoy, 1) + "%" : "資料不足"}`,
+    ];
+    fundamental = `<div class="block"><h4>② 基本面　<small>買什麼公司</small></h4>${ul(fundList)}<p class="exp">${esc(fundamentalExplain(f, m))}</p></div>`;
+  }
 
   const volTxt = i.volRatio != null ? `今量為 20 日均量 ${fmt(i.volRatio, 2)} 倍` : "資料不足";
   const techList = [`MA5：${fmt(i.ma5)}　MA10：${fmt(i.ma10)}`, `MA20：${fmt(i.ma20)}　MA60：${fmt(i.ma60)}`, `RSI：${i.rsi == null ? "—" : fmt(i.rsi, 0) + (i.rsi >= 70 ? "（過熱）" : i.rsi <= 30 ? "（偏弱）" : "（健康）")}`, `支撐：${fmt(i.support)}　壓力：${fmt(i.resistance)}`, `成交量變化：${volTxt}`];
@@ -853,12 +875,12 @@ document.querySelectorAll("[data-news]").forEach((btn) => btn.addEventListener("
     else openSearch("https://finance.yahoo.com/quote/" + encodeURIComponent(s));
   }
 }));
-$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value); });
+$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) { clearResults(); analyze(s, $("market").value); } });
 $("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
 $("save").addEventListener("click", () => { const s = $("h-symbol").value.trim().toUpperCase(); if (!s) return; const m = $("h-market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });
 $("h-symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("save").click(); });
-$("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; analyze(s, m, h.cost, h.qty); } });
-$("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { toast("尚未加入持股，請先在上方加入持股。"); return; } list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
+$("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; clearResults(); analyze(s, m, h.cost, h.qty); } });
+$("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { toast("尚未加入持股，請先在上方加入持股。"); return; } clearResults(); list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
 $("clearAll").addEventListener("click", () => { if (confirm("清空我的持股？")) setHoldings([]); });
 
 renderHoldings();

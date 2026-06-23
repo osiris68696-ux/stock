@@ -209,10 +209,10 @@ body.modal-open { overflow: hidden; }
 .sl-note { margin: 6px 0 0; color: #c6d0e0; font-size: .92rem; }
 .sl-sub { margin: 8px 0; color: var(--muted); font-size: .9rem; }
 .sl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 4px; }
-.sl-grid > div, .sl-miss, .sl-veto { background: #0c121b; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-top: 10px; }
-.sl-grid b, .sl-miss b, .sl-veto b { display: block; margin-bottom: 4px; font-size: .92rem; }
+.sl-grid > div, .sl-miss, .sl-info, .sl-veto { background: #0c121b; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; margin-top: 10px; }
+.sl-grid b, .sl-miss b, .sl-info b, .sl-veto b { display: block; margin-bottom: 4px; font-size: .92rem; }
 .sl-pass { border-left: 3px solid var(--up); } .sl-risk { border-left: 3px solid var(--dn); }
-.sl-miss { border-left: 3px solid var(--gold); } .sl-veto { border-left: 3px solid var(--orange); }
+.sl-miss { border-left: 3px solid var(--gold); } .sl-info { border-left: 3px solid var(--accent); } .sl-veto { border-left: 3px solid var(--orange); }
 .selection ul { margin: 0; padding-left: 18px; } .selection li { margin: 4px 0; font-size: .9rem; }
 @media (max-width: 720px) { .sl-grid { grid-template-columns: 1fr; } }
 
