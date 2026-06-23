@@ -102,10 +102,10 @@ function decide(ind, fund, market) {
   if (overheated) action = "不建議追高"; else if (belowMa20) action = "觀望";
   else if (score >= 68) action = nearSupport ? "可分批觀察" : "可小量布局";
   else if (score >= 55) action = "可分批觀察"; else if (score >= 45) action = "觀望"; else action = "風險偏高";
-  // 一票否決制：RSI 過熱 (>=70) 一律否決積極建議
+  // 進場限制風控（內部）：RSI 過熱 (>=70) 一律否決積極建議，公開 UI 只在觸發時顯示「進場限制」
   let veto = false, vetoReason = null;
   if (r != null && r >= 70 && ["買進", "可小量布局", "可分批觀察"].includes(action)) {
-    veto = true; vetoReason = `RSI ${fmt(r, 0)} ≥ 70 過熱，一票否決積極建議`;
+    veto = true; vetoReason = `RSI ${fmt(r, 0)} 已進入過熱區`;
     action = r >= 78 ? "不建議追高" : "觀望（RSI 過熱否決）";
     score = Math.min(score, 45);
   }
@@ -179,6 +179,7 @@ function evaluateStockLogic(a) {
   if (instNet != null && instNet > 0) pass.push("法人籌碼偏向買超，資金面對股價有支撐。");
   if (f.dy != null && f.dy >= 3) pass.push(`殖利率 ${fmt(f.dy, 2)}% 具備一定收益性，對長線配置有支撐。`);
   if (cat === "成長科技股" && belowMa20) pass.push("成長科技股波動較大，若能重新站回 MA20、量能配合，可再評估趨勢修復。");
+  if (isETF) pass.push("ETF 適合分批或定期定額長期配置，不需用個股短線追價邏輯操作。");
 
   if (belowMa20) risks.push("股價已跌破 MA20，短線多頭結構轉弱，需等待重新站回均線。");
   if (weakStack && !belowMa20) risks.push("短期均線排列轉弱（MA5 < MA10 或 MA10 < MA20），趨勢尚未恢復多頭。");
@@ -190,8 +191,8 @@ function evaluateStockLogic(a) {
   if (instNet != null && instNet < 0) risks.push("法人近期偏賣超，籌碼面尚未轉強。");
   // 基本面 / 籌碼面：依分類分流（ETF 不適用個股基本面；美股為資料源限制，非公司劣勢）
   if (isETF) {
-    dataNotes.push("ETF 類標的不適用個股 EPS / P/E / P/B / 營收成長率評分，已改以技術面與風險控制為主。");
-    if (!chip.ok) dataNotes.push("ETF 三大法人 / 融資融券資料不足，籌碼面以技術面與風險控制為主。");
+    // ETF 不適用個股 EPS / P/E / P/B / 殖利率 / 營收成長率評分（保留於程式邏輯，不在主畫面顯示「資料不足」）；
+    // ETF 改以技術面、價格位置、風險控制評分，不產生個股基本面 missing、也不因缺這些欄位扣分。
   } else if (isUS) {
     dataNotes.push("基本面：資料源限制 — 純前端版尚未接入穩定的美股基本面資料源，EPS / P/E / P/B / 營收成長率暫不納入完整評分；屬資料源限制，非公司基本面不佳。");
     dataNotes.push("籌碼面：資料源限制 — 美股無台股三大法人 / 融資融券格式，純前端版尚未接入機構持股 / Short Interest / 分析師評等，籌碼面保守處理（未來建 market_data_backend 才補 SEC / Finnhub / Alpha Vantage / FMP）。");
@@ -221,9 +222,19 @@ function evaluateStockLogic(a) {
   let riskS = 20; const riskMax = 20;
   if (belowMa20) riskS -= 8; if (rsi != null && rsi >= 75) riskS -= 8; if (distSup != null && distSup > 10) riskS -= 5; if (distRes != null && distRes >= 0 && distRes < 5) riskS -= 4; if (instNet != null && instNet < 0) riskS -= 3;
   riskS = Math.max(0, Math.min(riskMax, riskS));
-  // 正規化：資料不足的面向不計入分母（避免無資料而被不公平歸零），但會以 hardLimit 限制最高評級
-  const availMax = techMax + riskMax + (fund != null ? fundMax : 0) + (chipS != null ? chipMax : 0);
-  const total = Math.round((tech + riskS + (fund || 0) + (chipS || 0)) / availMax * 100);
+  const nearSup = distSup != null && distSup >= 0 && distSup < 6, nearRes = distRes != null && distRes >= 0 && distRes < 5, farSup = distSup != null && distSup > 10;
+  // 價格位置分（ETF 用）
+  let posS = 8; const posMax = 15;
+  if (nearSup) posS += 5; if (aboveMa20) posS += 2; if (nearRes) posS -= 4; if (farSup) posS -= 5; posS = Math.max(0, Math.min(posMax, posS));
+  // 正規化：資料不足的面向不計入分母；ETF 以技術面 + 風險控制 + 價格位置評分（不看個股基本面/籌碼）
+  let availMax, total;
+  if (isETF) {
+    availMax = techMax + riskMax + posMax;
+    total = Math.round((tech + riskS + posS) / availMax * 100);
+  } else {
+    availMax = techMax + riskMax + (fund != null ? fundMax : 0) + (chipS != null ? chipMax : 0);
+    total = Math.round((tech + riskS + (fund || 0) + (chipS || 0)) / availMax * 100);
+  }
 
   let grade, label;
   if (total >= 80) { grade = "A"; label = "條件優良"; }
@@ -239,18 +250,23 @@ function evaluateStockLogic(a) {
   while (pass.length < 2) { const fl = ["技術面尚未出現明顯破壞訊號，可持續觀察是否轉強。", "可等待更明確的進場訊號（站回均線、量能放大）再評估。"]; const x = fl.find((s) => !pass.includes(s)); if (!x) break; pass.push(x); }
   while (risks.length < 2) { const fl = ["整體趨勢尚未明確轉強，不宜單筆重壓。", "突發消息 / 財報 / 政策變化難以預測，需控制部位。"]; const x = fl.find((s) => !risks.includes(s)); if (!x) break; risks.push(x); }
 
-  // 動態結論 + 決策摘要補充
+  // 動態結論 + 決策摘要補充（ETF 早於 belowMa20 判斷，確保 ETF 用 ETF 語氣）
   let conclusion, decNote;
-  if (d.veto) { conclusion = "目前 RSI 偏高、已觸發一票否決，屬「過熱不宜追高」。若已持有可續抱觀察；尚未進場者建議等待回落接近支撐再分批。"; decNote = "RSI 過熱已觸發一票否決，最高評級限制為 C，不宜追高。"; }
+  if (d.veto) { conclusion = "目前 RSI 偏高、屬過熱不宜追高。若已持有可續抱觀察；尚未進場者建議等待回落接近支撐再分批。"; decNote = "RSI 已進入過熱區，不宜追高，建議等待回落接近支撐再評估。"; }
   else if (noTech) { conclusion = "資料不足，僅能做初步觀察，不建議依此結果進場。"; decNote = "技術 / 基本面資料不足，僅能初步觀察，不宜進場。"; }
+  else if (isETF) {
+    if (farSup) conclusion = "目前價格距離支撐較遠，短線不宜追高；若是長期配置，可採分批或定期定額方式降低進場風險。";
+    else if (rsi != null && rsi >= 40 && rsi <= 65 && aboveMa20) conclusion = "目前 RSI 位於健康區間，短線沒有明顯過熱；ETF 可列入觀察，但仍建議分批或定期定額，不宜一次投入。";
+    else conclusion = "ETF 類標的主要以追蹤標的走勢與價格位置判斷。若 RSI 健康且價格接近支撐，可考慮分批；若距離支撐過遠或接近壓力區，則不宜一次追高。";
+    decNote = "ETF 以追蹤標的走勢與價格位置判斷，適合分批 / 定期定額長期配置，不宜短線一次追高。";
+  }
   else if (belowMa20 && rsi != null && rsi < 65) { conclusion = `目前屬於「可觀察但不宜急買」。雖然 RSI ${fmt(rsi, 0)} 已回到健康區間、追高風險下降，但股價仍跌破 MA20、趨勢尚未修復；若重新站回均線並量能配合，再考慮分批觀察。` + (isUS ? "同時純前端版缺乏完整美股基本面與籌碼資料（資料源限制，非公司劣勢），因此不適合給出積極買進結論。" : ""); decNote = "RSI 位於健康區間，但股價跌破 MA20、趨勢尚未修復，仍需等待轉強訊號。"; }
   else if (belowMa20) { conclusion = "股價跌破 MA20、趨勢轉弱，建議先觀察是否重新站回均線再評估。"; decNote = "股價跌破 MA20，短線趨勢轉弱，建議先觀察是否重新站回均線。"; }
-  else if (isETF) { conclusion = "ETF 類標的以技術面與風險控制評估：" + (aboveMa20 ? "目前站上均線，可分批 / 定期定額長期配置、避免單筆追高。" : "目前位於均線下方，建議等待站回均線或回測支撐再分批。"); decNote = "ETF 改以技術面與風險控制評估，適合分批 / 定期定額，不宜短線追高。"; }
   else if (isUS) { conclusion = "技術面可參考，但純前端版缺乏完整美股基本面與籌碼資料（資料源限制，非公司劣勢），僅能初步觀察，不適合給出積極買進結論。"; decNote = "美股基本面 / 籌碼為資料源限制（非公司不佳），僅能初步觀察、不宜積極布局。"; }
   else if (grade === "A" || grade === "B") { conclusion = "各面向條件相對占優，可分批觀察、避免一次重壓，並留意均線與量能變化。"; decNote = "各面向條件占優，可分批觀察、避免一次重壓。"; }
   else { conclusion = "條件普通，建議分批觀察、貼近支撐再評估，避免追高。"; decNote = "條件普通，建議分批觀察、貼近支撐再評估。"; }
 
-  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote };
+  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax, pos: posS, posMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote };
 }
 
 /* ---------- 文字段落 ---------- */
@@ -556,28 +572,40 @@ function renderResult(a, meta) {
   if (a.holding) { const h = a.holding, cls = h.ret >= 0 ? "pnl-up" : "pnl-down"; hold = `<div class="holding"><b>💼 我的持股</b>　成本 ${fmt(h.cost)}　股數 ${fmt(h.qty, 0)}　市值 ${fmt(h.marketValue)}　<span class="${cls}">報酬 ${fmt(h.ret)}%／損益 ${fmt(h.pnl)}</span>　建議：<b>${esc(h.suggestion)}</b></div>`; }
 
   const L = evaluateStockLogic(a);
-  const vetoLine = d.veto ? `<p class="veto">🛡 硬性風控（已觸發）：${esc(d.vetoReason)}，已下修為「${esc(d.action)}」。</p>` : "";
-  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p>${vetoLine}<p class="op">${esc(d.operation)}</p><p class="sl-note">📌 ${esc(L.decNote)}</p></div>`;
+  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p><p class="op">${esc(d.operation)}</p><p class="sl-note">📌 ${esc(L.decNote)}</p></div>`;
+  // 進場限制：只有真正觸發風控（RSI 過熱 / 內部 veto）時才顯示，用使用者語言、不顯示工程字眼
+  let limitBlock = "";
+  if (d.veto || d.overheated) {
+    let reason = `RSI ${fmt(i.rsi, 0)} ${i.rsi >= 75 ? "已進入過熱區" : "偏高、接近過熱"}`;
+    if (d.farFromMa20) reason += "，且價格已明顯偏離均線、距離支撐過遠";
+    reason += "，若此時追價，回檔風險較高。";
+    limitBlock = `<div class="block limit"><h4>⛔ 進場限制：不建議追高</h4><p>原因：${esc(reason)}</p></div>`;
+  }
   const liArr = (arr) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
-  const subLabel = (v, max, kind) => v != null ? `${v} / ${max}` : (L.isETF ? (kind === "fund" ? "不適用（ETF）" : "—") : (L.isUS ? "資料源限制" : "資料不足"));
-  const vetoBody = L.veto.length ? L.veto.map((v) => `<li>已觸發　原因：${esc(v)}</li>`).join("") : "<li>未觸發，尚未出現極端過熱或重大籌碼風險。</li>";
+  const subLabel = (v, max) => v != null ? `${v} / ${max}` : (L.isUS ? "資料源限制" : "資料不足");
+  const breakdown = L.isETF
+    ? `技術面：${L.sub.tech} / ${L.sub.techMax}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}｜價格位置：${L.sub.pos} / ${L.sub.posMax}`
+    : `基本面：${subLabel(L.sub.fund, L.sub.fundMax)}｜技術面：${L.sub.tech} / ${L.sub.techMax}｜籌碼面：${subLabel(L.sub.chip, L.sub.chipMax)}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}`;
   const selection = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p>標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
-      <p class="sl-sub">分數拆解 — 基本面：${subLabel(L.sub.fund, L.sub.fundMax, "fund")}｜技術面：${L.sub.tech} / ${L.sub.techMax}｜籌碼面：${subLabel(L.sub.chip, L.sub.chipMax, "chip")}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}</p>
+      <p class="sl-sub">分數拆解 — ${breakdown}</p>
       <div class="sl-grid">
         <div class="sl-pass"><b>🟢 支持觀察理由</b><ul>${liArr(L.pass)}</ul></div>
         <div class="sl-risk"><b>🔴 扣分 / 風險理由</b><ul>${liArr(L.risks)}</ul></div>
       </div>
       ${L.missing.length ? `<div class="sl-miss"><b>⚠ 資料不足</b><ul>${liArr(L.missing)}</ul></div>` : ""}
       ${L.dataNotes.length ? `<div class="sl-info"><b>ℹ️ 資料源說明</b><ul>${liArr(L.dataNotes)}</ul></div>` : ""}
-      <div class="sl-veto"><b>🛡 硬性風控</b><ul>${vetoBody}</ul></div>
       <p class="exp">${esc(categoryNote(L.cat))}</p></div>`;
 
   let fundamental;
   if (L.cat === "ETF") {
-    fundamental = `<div class="block"><h4>② 基本面　<small>ETF</small></h4><p>ETF 不適用單一公司 EPS / P/E / P/B / 營收成長率評分。</p>`
-      + `<p class="exp">ETF 評估改以技術面、RSI、支撐 / 壓力、價格位置、是否過熱、是否適合分批與長期配置為主。</p></div>`;
+    fundamental = `<div class="block"><h4>② 標的屬性　<small>ETF</small></h4>` + ul([
+      "類型：ETF（一籃子成分股，非單一公司）",
+      "評估方式：以追蹤標的走勢、價格位置與風險控制為主",
+      "適合策略：分批、定期定額、長期配置",
+      "注意事項：短線仍需避開過熱與距離支撐過遠的位置",
+    ]) + `</div>`;
   } else if (m !== "TW") {
     fundamental = `<div class="block"><h4>② 基本面　<small>資料源限制</small></h4><p>基本面：<b>資料源限制</b></p>`
       + `<p class="exp">目前純前端版本尚未接入穩定的美股基本面資料源，因此 EPS、P/E、P/B、營收成長率暫不納入完整評分。這是資料源限制，不代表該公司基本面不佳。未來若建立 market_data_backend，才會補 SEC / Finnhub / Alpha Vantage / FMP 等資料源。</p></div>`;
@@ -617,7 +645,7 @@ function renderResult(a, meta) {
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></div>`;
 
-  return header + hold + decision + selection + `<div class="aspects">${fundamental}${technical}${chip}</div>` + kline + `<div class="aspects two">${buy}${nobuy}</div>` + zones + concl + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p>`;
+  return header + hold + decision + limitBlock + selection + `<div class="aspects">${fundamental}${technical}${chip}</div>` + kline + `<div class="aspects two">${buy}${nobuy}</div>` + zones + concl + source + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p>`;
 }
 
 /* ===================== 黃金價格分析 ===================== */

@@ -206,6 +206,8 @@ body.modal-open { overflow: hidden; }
 .cat-badge { display: inline-block; padding: 3px 11px; border-radius: 999px; font-weight: 700; font-size: .85rem; background: var(--accent2); color: #0b0716; }
 .cat-badge.cat-na { background: #3a4150; color: var(--fg); }
 .veto { margin: 6px 0 0; color: var(--orange); font-weight: 600; }
+.limit { border-left: 3px solid var(--orange); background: linear-gradient(180deg, #2a1a10, #11161f); }
+.limit h4 { color: var(--orange); margin: 0 0 6px; } .limit p { margin: 0; }
 .sl-note { margin: 6px 0 0; color: #c6d0e0; font-size: .92rem; }
 .sl-sub { margin: 8px 0; color: var(--muted); font-size: .9rem; }
 .sl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 4px; }
