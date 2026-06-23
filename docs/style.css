@@ -246,12 +246,16 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .tb-sub { margin: 2px 0 0; font-size: .66rem; letter-spacing: 4px; color: var(--cyan); }
 .tagline { text-align: center; color: #8fb6d6; margin: 8px 0 4px; font-size: .98rem; letter-spacing: 1px; }
 
-/* 三欄大屏 */
-.main-dashboard { display: grid; grid-template-columns: 280px minmax(0, 1fr) 280px; gap: 18px; margin-top: 14px; align-items: start; }
+/* 橫向看盤大屏：title / 左 / 中 / 右 / bottom 五區 grid */
+.dashboard-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px; grid-template-rows: auto 1fr auto;
+  grid-template-areas: "title title title" "left center right" "bottom bottom bottom"; gap: 16px; align-items: start; min-height: calc(100vh - 96px); }
+.top-title { grid-area: title; margin: 0; }
+.top-title .titlebox { margin: 6px 0 2px; }
+.left-panel { grid-area: left; } .center-panel { grid-area: center; } .right-panel { grid-area: right; } .bottom-panel { grid-area: bottom; margin: 0; }
 .side-panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .side-panel .card { margin: 0; padding: 14px; }
 .side-panel .card h2 { font-size: 1.04rem; }
-.center-panel { min-width: 0; } .center-panel .result { margin: 0; }
+.center-panel { min-width: 0; display: flex; flex-direction: column; } .center-panel .result { margin: 0; }
 .side-result, .bottom-result { background: transparent; border: none; box-shadow: none; padding: 0; margin: 0; }
 .side-result .block { margin: 0 0 14px; }
 .statmini .stat-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0, 220, 255, .08); font-size: .85rem; }
@@ -260,8 +264,10 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .goldmini .gm-price { font-size: 1.6rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 14px rgba(255, 200, 80, .4); font-variant-numeric: tabular-nums; }
 .goldmini .gm-sub { color: var(--muted); font-size: .8rem; } .goldmini #goldMiniBody { margin-bottom: 10px; }
 
-/* 今日市場雷達 2x2 */
+/* 今日市場雷達 */
 .radar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.radar3 { grid-template-columns: repeat(3, 1fr); }
+.radar3 .radar-cell { padding: 12px 4px; } .radar3 .radar-cell b { font-size: .92rem; }
 .radar-cell { display: block; text-align: center; cursor: pointer; padding: 12px 8px; border-radius: 12px; color: var(--fg);
   background: rgba(3, 10, 20, .55); border: 1px solid var(--line); box-shadow: none; transition: border-color .14s, box-shadow .14s, transform .12s; }
 .radar-cell:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgba(0, 200, 255, .3); transform: translateY(-2px); }
@@ -275,9 +281,12 @@ html, body { max-width: 100%; overflow-x: hidden; }
 /* 風險提示 */
 .riskcard ul { margin: 0; padding-left: 18px; } .riskcard li { margin: 5px 0; font-size: .82rem; color: #bcd3e6; line-height: 1.5; }
 
-/* 中央 HUD hub（查詢前） */
-.center-hub { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 26px 16px; min-height: 380px; justify-content: center;
-  background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--glow); }
+/* 中央 HUD hub（查詢前）：主視覺，填滿第一屏，不放可點功能大卡 */
+.center-hub { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 26px 16px; min-height: 460px; justify-content: center;
+  background: radial-gradient(120% 80% at 50% 30%, rgba(0, 90, 150, .18), transparent 60%), linear-gradient(180deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--glow); }
+.hub-hint { color: var(--muted); font-size: .92rem; margin: 0; }
+.hub-tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.hub-tags span { font-size: .82rem; color: #bcd9ee; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(3, 14, 26, .5); }
 .hud-ring { width: 210px; height: 210px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;
   box-shadow: inset 0 0 34px rgba(0, 180, 255, .14), 0 0 32px rgba(0, 180, 255, .12); }
 .hud-ring::before { content: ""; position: absolute; inset: -2px; border-radius: 50%;
@@ -342,22 +351,24 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .center-foot { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-top: 14px; }
 .center-foot .block { margin: 0; }
 
-/* K 線主圖放大 */
-.center-panel canvas.kline { height: 460px; }
+/* K 線主圖放大成中央最大視覺 */
+.center-panel canvas.kline { height: 520px; }
 .center-panel .kline-wrap h4 small { color: var(--muted); }
 
 /* 右側分析摘要卡精簡（隱藏長說明段落，只留重點條列） */
 .side-result .exp { display: none; }
 .side-result .block h4 { font-size: 1rem; }
 
-@media (max-width: 900px) {
-  .main-dashboard { grid-template-columns: 1fr; }
+@media (max-width: 980px) {
+  /* 手機 / 窄螢幕：改回直向單欄，桌機才橫向大屏 */
+  .dashboard-shell { display: block; min-height: 0; }
+  .dashboard-shell > * { margin-bottom: 16px; }
   .tb-line { display: none; } .tb-mid { flex: 1 1 auto; }
-  .hub-entries { grid-template-columns: 1fr; } .center-hub { min-height: 300px; }
+  .center-hub { min-height: 300px; }
   .center-foot { grid-template-columns: 1fr; }
   .quote-hero { flex-direction: column; align-items: stretch; gap: 12px; }
   .qh-right { align-items: stretch; } .qh-meta { text-align: left; grid-template-columns: repeat(2, 1fr); }
-  .center-panel canvas.kline { height: 340px; }
+  .center-panel canvas.kline { height: 320px; }
 }
 @media (max-width: 560px) {
   .tb-mid h1 { font-size: 1.4rem; } .tb-mid { padding: 7px 18px; }

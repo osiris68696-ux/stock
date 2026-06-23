@@ -5,24 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-012" />
+  <link rel="stylesheet" href="./style.css?v=20260623-013" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
 
   <main class="shell">
-    <!-- 科技大屏標題框 -->
-    <div class="titlebox">
-      <span class="tb-line tb-line-l"></span>
-      <div class="tb-mid">
-        <h1>台美股・黃金智慧分析</h1>
-        <p class="tb-sub">STOCK ・ GOLD ・ MARKET INTELLIGENCE</p>
+    <div class="dashboard-shell">
+      <!-- 科技大屏標題框（橫跨三欄） -->
+      <div class="top-title">
+        <div class="titlebox">
+          <span class="tb-line tb-line-l"></span>
+          <div class="tb-mid">
+            <h1>台美股・黃金智慧分析</h1>
+            <p class="tb-sub">STOCK ・ GOLD ・ MARKET INTELLIGENCE</p>
+          </div>
+          <span class="tb-line tb-line-r"></span>
+        </div>
+        <p class="tagline">股票 × 黃金 × 技術面 × 籌碼面｜投資決策輔助工具</p>
       </div>
-      <span class="tb-line tb-line-r"></span>
-    </div>
-    <p class="tagline">股票 × 黃金 × 技術面 × 籌碼面｜投資決策輔助工具</p>
 
-    <div class="main-dashboard">
       <!-- 左側資訊欄 -->
       <aside class="side-panel left-panel">
         <section class="card" id="query">
@@ -67,11 +69,8 @@
       <section class="center-panel">
         <div id="centerHub" class="center-hub">
           <div class="hud-ring"><div class="hud-ring-core"><b>ANALYTICS</b><span>輸入代號開始分析</span></div></div>
-          <div class="hub-entries">
-            <button class="hub-entry" data-act="focus-symbol"><span class="ico">📈</span><b>股票分析</b><small>輸入代號即時分析</small></button>
-            <button class="hub-entry" data-act="gold"><span class="ico">🥇</span><b>黃金價格</b><small>國際金價與走勢</small></button>
-            <button class="hub-entry" data-act="twnews"><span class="ico">📰</span><b>新聞搜尋</b><small>台股 / 美股新聞</small></button>
-          </div>
+          <p class="hub-hint">在左側「股票快查」輸入台股 / 美股代號，即可開始分析</p>
+          <div class="hub-tags"><span>📈 股票分析</span><span>🥇 黃金追蹤</span><span>📰 市場新聞</span></div>
         </div>
         <div id="centerResult"></div>
       </section>
@@ -86,11 +85,10 @@
 
         <section class="card">
           <h2>📡 今日市場雷達</h2>
-          <div class="radar">
+          <div class="radar radar3">
             <button class="radar-cell" data-act="focus-symbol"><b>台股</b><small>可查詢</small></button>
             <button class="radar-cell" data-act="focus-symbol"><b>美股</b><small>可查詢</small></button>
             <button class="radar-cell" data-act="gold"><b>黃金</b><small>可查詢</small></button>
-            <button class="radar-cell" data-act="twnews"><b>新聞</b><small>外部搜尋</small></button>
           </div>
         </section>
 
@@ -132,10 +130,10 @@
 
         <div id="rightResult"></div>
       </aside>
-    </div>
 
-    <!-- 底部資訊區 -->
-    <div class="bottom-panel"><div id="bottomResult"></div></div>
+      <!-- 底部資訊區（橫跨三欄） -->
+      <div class="bottom-panel"><div id="bottomResult"></div></div>
+    </div>
   </main>
 
   <footer><p>資料來源：FinMind 開放 API、Gold-API.com。以上僅為資料整理與趨勢分析，不構成投資建議。</p></footer>
@@ -185,6 +183,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-012"></script>
+  <script src="./app.js?v=20260623-013"></script>
 </body>
 </html>

@@ -654,9 +654,9 @@ function renderResult(a, meta) {
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></div>`;
 
   // 三欄分流：中央=現價/決策/K線/選股摘要/結論；右側=基本面/技術面/籌碼面/資料來源；底部=支持/風險/價格區間
-  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}<div class="center-foot">${selSummary}${concl}</div></div>`;
+  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}</div>`;
   const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}</div>`;
-  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${reasonsBottom}${zones}</div><p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
+  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${reasonsBottom}${zones}${concl}</div><p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
   return { center, right, bottom };
 }
 
