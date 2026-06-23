@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-013" />
+  <link rel="stylesheet" href="./style.css?v=20260623-014" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -50,19 +50,6 @@
           <div class="row"><button id="save" class="ghost">加入持股</button><button id="analyzeAll" class="ghost">持股診斷</button><button id="clearAll" class="ghost danger">清空</button></div>
           <div id="holdings" class="chips"></div>
         </section>
-
-        <section class="card">
-          <h2>📰 新聞搜尋</h2>
-          <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
-        </section>
-
-        <section class="card statmini">
-          <h2>🛰 市場狀態</h2>
-          <div class="stat-row"><span>資料來源</span><b>FinMind ・ Gold-API</b></div>
-          <div class="stat-row"><span>價格類型</span><b>最新可取得資料</b></div>
-          <div class="stat-row"><span>更新方式</span><b>手動 / 自動</b></div>
-          <div class="stat-row"><span>市場</span><b>台股 ・ 美股 ・ 黃金</b></div>
-        </section>
       </aside>
 
       <!-- 中央主分析區 -->
@@ -70,7 +57,6 @@
         <div id="centerHub" class="center-hub">
           <div class="hud-ring"><div class="hud-ring-core"><b>ANALYTICS</b><span>輸入代號開始分析</span></div></div>
           <p class="hub-hint">在左側「股票快查」輸入台股 / 美股代號，即可開始分析</p>
-          <div class="hub-tags"><span>📈 股票分析</span><span>🥇 黃金追蹤</span><span>📰 市場新聞</span></div>
         </div>
         <div id="centerResult"></div>
       </section>
@@ -84,38 +70,16 @@
         </section>
 
         <section class="card">
-          <h2>📡 今日市場雷達</h2>
-          <div class="radar radar3">
-            <button class="radar-cell" data-act="focus-symbol"><b>台股</b><small>可查詢</small></button>
-            <button class="radar-cell" data-act="focus-symbol"><b>美股</b><small>可查詢</small></button>
-            <button class="radar-cell" data-act="gold"><b>黃金</b><small>可查詢</small></button>
-          </div>
+          <h2>📰 新聞搜尋</h2>
+          <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
         </section>
 
         <section class="card statmini">
-          <h2>🛢 資料狀態</h2>
-          <div class="stat-row"><span>股票資料</span><b>FinMind</b></div>
-          <div class="stat-row"><span>黃金現價</span><b>Gold-API</b></div>
-          <div class="stat-row"><span>歷史金價</span><b>FinMind GDF</b></div>
-          <div class="stat-row"><span>新聞</span><b>外部搜尋</b></div>
+          <h2>🛰 市場狀態</h2>
+          <div class="stat-row"><span>資料來源</span><b>FinMind ・ Gold-API</b></div>
           <div class="stat-row"><span>價格類型</span><b>最新可取得資料</b></div>
-          <div class="stat-row"><span>報價提醒</span><b>非券商逐筆即時</b></div>
-        </section>
-
-        <section class="card">
-          <h2>⚡ 熱門快捷查詢</h2>
-          <div class="quick-label">台股</div>
-          <div class="quick-grid">
-            <button class="quick" data-qm="TW" data-qs="2330">2330</button>
-            <button class="quick" data-qm="TW" data-qs="2317">2317</button>
-            <button class="quick" data-qm="TW" data-qs="2454">2454</button>
-          </div>
-          <div class="quick-label">美股</div>
-          <div class="quick-grid">
-            <button class="quick" data-qm="US" data-qs="NVDA">NVDA</button>
-            <button class="quick" data-qm="US" data-qs="AAPL">AAPL</button>
-            <button class="quick" data-qm="US" data-qs="QQQ">QQQ</button>
-          </div>
+          <div class="stat-row"><span>更新方式</span><b>手動 / 自動</b></div>
+          <div class="stat-row"><span>市場</span><b>台股 ・ 美股 ・ 黃金</b></div>
         </section>
 
         <section class="card riskcard">
@@ -183,6 +147,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-013"></script>
+  <script src="./app.js?v=20260623-014"></script>
 </body>
 </html>

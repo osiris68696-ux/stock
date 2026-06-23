@@ -20,13 +20,13 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-even
 body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
   background: repeating-linear-gradient(180deg, rgba(0, 220, 255, .016) 0 2px, transparent 2px 5px); }
 
-.shell { max-width: var(--max); margin: 0 auto; padding: 26px 20px 60px; }
+.shell { max-width: none; width: 100%; margin: 0; padding: 0; }
 h1, h2, h3, h4 { letter-spacing: .4px; }
 
 /* 頂部 */
 .appbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(7, 16, 28, .82), rgba(7, 16, 28, .55)); backdrop-filter: blur(10px); box-shadow: 0 1px 18px rgba(0, 180, 255, .1); }
-.appbar-inner { max-width: var(--max); margin: 0 auto; padding: 11px 20px; display: flex; align-items: center; gap: 12px; }
+.appbar-inner { max-width: none; width: 100%; margin: 0; padding: 11px 24px; display: flex; align-items: center; gap: 12px; }
 .brand { font-weight: 800; font-size: 1.04rem; color: #eaf6ff; text-shadow: 0 0 14px rgba(0, 200, 255, .5); }
 .appbar-status { display: none; }
 
@@ -216,7 +216,7 @@ body.modal-open { overflow: hidden; }
   .sl-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
-  .shell { padding: 18px 12px 46px; }
+  .dashboard-shell { padding: 12px 12px 24px; }
   .hero { padding: 26px 10px 14px; } .hero h1 { font-size: 1.72rem; } .tagline { font-size: .92rem; margin-bottom: 18px; }
   .status-cards { grid-template-columns: 1fr; }
   .appbar-inner { padding: 9px 14px; } .brand { font-size: .96rem; }
@@ -246,16 +246,18 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .tb-sub { margin: 2px 0 0; font-size: .66rem; letter-spacing: 4px; color: var(--cyan); }
 .tagline { text-align: center; color: #8fb6d6; margin: 8px 0 4px; font-size: .98rem; letter-spacing: 1px; }
 
-/* 橫向看盤大屏：title / 左 / 中 / 右 / bottom 五區 grid */
-.dashboard-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr) 260px; grid-template-rows: auto 1fr auto;
-  grid-template-areas: "title title title" "left center right" "bottom bottom bottom"; gap: 16px; align-items: start; min-height: calc(100vh - 96px); }
+/* 橫向看盤大屏：滿版、不套小版心；title / 左 / 中 / 右 / bottom 五區 grid */
+.dashboard-shell { width: 100%; max-width: none; margin: 0; padding: 16px 24px 28px; display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 300px; grid-template-rows: auto 1fr auto;
+  grid-template-areas: "title title title" "left center right" "bottom bottom bottom"; gap: 16px; align-items: start; min-height: calc(100vh - 58px); }
 .top-title { grid-area: title; margin: 0; }
 .top-title .titlebox { margin: 6px 0 2px; }
 .left-panel { grid-area: left; } .center-panel { grid-area: center; } .right-panel { grid-area: right; } .bottom-panel { grid-area: bottom; margin: 0; }
 .side-panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .side-panel .card { margin: 0; padding: 14px; }
 .side-panel .card h2 { font-size: 1.04rem; }
-.center-panel { min-width: 0; display: flex; flex-direction: column; } .center-panel .result { margin: 0; }
+.center-panel { min-width: 0; width: 100%; display: flex; flex-direction: column; } .center-panel .result { margin: 0; }
+.center-panel .kline-wrap, .center-panel canvas.kline { width: 100%; max-width: none; }
 .side-result, .bottom-result { background: transparent; border: none; box-shadow: none; padding: 0; margin: 0; }
 .side-result .block { margin: 0 0 14px; }
 .statmini .stat-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0, 220, 255, .08); font-size: .85rem; }
@@ -359,9 +361,15 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .side-result .exp { display: none; }
 .side-result .block h4 { font-size: 1rem; }
 
+/* 超寬螢幕：側欄略寬、K 線更高 */
+@media (min-width: 1600px) {
+  .dashboard-shell { grid-template-columns: 330px minmax(0, 1fr) 330px; padding: 18px 32px 30px; }
+  .center-panel canvas.kline { height: 560px; }
+}
+
 @media (max-width: 980px) {
   /* 手機 / 窄螢幕：改回直向單欄，桌機才橫向大屏 */
-  .dashboard-shell { display: block; min-height: 0; }
+  .dashboard-shell { display: block; min-height: 0; padding: 12px 14px 22px; }
   .dashboard-shell > * { margin-bottom: 16px; }
   .tb-line { display: none; } .tb-mid { flex: 1 1 auto; }
   .center-hub { min-height: 300px; }
