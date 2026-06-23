@@ -914,6 +914,13 @@ $("h-symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("sav
 $("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; analyze(s, m, h.cost, h.qty); } });
 $("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { toast("尚未加入持股，請先在上方加入持股。"); return; } list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
 $("clearAll").addEventListener("click", () => { if (confirm("清空我的持股？")) setHoldings([]); });
+// 熱門快捷查詢：填入左側查詢面板並直接分析（analyze 內部 ++SEQ + stopAuto + 清空舊結果，只顯示最新一次）
+document.querySelectorAll(".quick").forEach((b) => b.addEventListener("click", () => {
+  const m = b.getAttribute("data-qm"), s = b.getAttribute("data-qs");
+  if (!m || !s) return;
+  $("market").value = m; $("symbol").value = s;
+  analyze(s, m);
+}));
 
 // 右側黃金現價小卡（只抓 Gold-API 現價，點卡片開啟完整黃金分析 modal）
 async function loadGoldMini() {

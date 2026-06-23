@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-010" />
+  <link rel="stylesheet" href="./style.css?v=20260623-011" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -83,6 +83,53 @@
           <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
           <button class="ghost" data-act="gold">開啟黃金分析</button>
         </section>
+
+        <section class="card">
+          <h2>📡 今日市場雷達</h2>
+          <div class="radar">
+            <button class="radar-cell" data-act="focus-symbol"><b>台股</b><small>可查詢</small></button>
+            <button class="radar-cell" data-act="focus-symbol"><b>美股</b><small>可查詢</small></button>
+            <button class="radar-cell" data-act="gold"><b>黃金</b><small>可查詢</small></button>
+            <button class="radar-cell" data-act="twnews"><b>新聞</b><small>外部搜尋</small></button>
+          </div>
+        </section>
+
+        <section class="card statmini">
+          <h2>🛢 資料狀態</h2>
+          <div class="stat-row"><span>股票資料</span><b>FinMind</b></div>
+          <div class="stat-row"><span>黃金現價</span><b>Gold-API</b></div>
+          <div class="stat-row"><span>歷史金價</span><b>FinMind GDF</b></div>
+          <div class="stat-row"><span>新聞</span><b>外部搜尋</b></div>
+          <div class="stat-row"><span>價格類型</span><b>最新可取得資料</b></div>
+          <div class="stat-row"><span>報價提醒</span><b>非券商逐筆即時</b></div>
+        </section>
+
+        <section class="card">
+          <h2>⚡ 熱門快捷查詢</h2>
+          <div class="quick-label">台股</div>
+          <div class="quick-grid">
+            <button class="quick" data-qm="TW" data-qs="2330">2330</button>
+            <button class="quick" data-qm="TW" data-qs="2317">2317</button>
+            <button class="quick" data-qm="TW" data-qs="2454">2454</button>
+          </div>
+          <div class="quick-label">美股</div>
+          <div class="quick-grid">
+            <button class="quick" data-qm="US" data-qs="NVDA">NVDA</button>
+            <button class="quick" data-qm="US" data-qs="AAPL">AAPL</button>
+            <button class="quick" data-qm="US" data-qs="QQQ">QQQ</button>
+          </div>
+        </section>
+
+        <section class="card riskcard">
+          <h2>⚠ 風險提示</h2>
+          <ul>
+            <li>資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</li>
+            <li>分析結果僅供研究，不構成投資建議。</li>
+            <li>ETF 適合分批與長期配置，不宜用短線追價邏輯操作。</li>
+            <li>美股完整基本面需未來獨立 market_data_backend 補強。</li>
+          </ul>
+        </section>
+
         <div id="rightResult"></div>
       </aside>
     </div>
@@ -138,6 +185,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-010"></script>
+  <script src="./app.js?v=20260623-011"></script>
 </body>
 </html>

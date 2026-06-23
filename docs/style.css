@@ -260,6 +260,21 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .goldmini .gm-price { font-size: 1.6rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 14px rgba(255, 200, 80, .4); font-variant-numeric: tabular-nums; }
 .goldmini .gm-sub { color: var(--muted); font-size: .8rem; } .goldmini #goldMiniBody { margin-bottom: 10px; }
 
+/* 今日市場雷達 2x2 */
+.radar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.radar-cell { display: block; text-align: center; cursor: pointer; padding: 12px 8px; border-radius: 12px; color: var(--fg);
+  background: rgba(3, 10, 20, .55); border: 1px solid var(--line); box-shadow: none; transition: border-color .14s, box-shadow .14s, transform .12s; }
+.radar-cell:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgba(0, 200, 255, .3); transform: translateY(-2px); }
+.radar-cell b { display: block; font-size: 1rem; color: #eaf6ff; } .radar-cell small { color: var(--up); font-size: .76rem; }
+
+/* 熱門快捷查詢 */
+.quick-label { color: var(--muted); font-size: .8rem; margin: 10px 0 6px; letter-spacing: .5px; }
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.quick { padding: 9px 4px; font-size: .92rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* 風險提示 */
+.riskcard ul { margin: 0; padding-left: 18px; } .riskcard li { margin: 5px 0; font-size: .82rem; color: #bcd3e6; line-height: 1.5; }
+
 /* 中央 HUD hub（查詢前） */
 .center-hub { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 26px 16px; min-height: 380px; justify-content: center;
   background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--glow); }
