@@ -553,26 +553,34 @@ function renderResult(a, meta) {
   const lag = daysBetween(a.lastDate), recent = lag <= 4;
   const statusTxt = recent ? "正常" : "可能延遲";
 
-  const header = `<div class="rhead"><h3>${esc(a.name)} <span class="code">${esc(a.symbol)}</span>${a.industry ? ` <span class="muted">· ${esc(a.industry)}</span>` : ""}</h3></div>
-    <div class="ticker"><span class="px ${dir}">${fmt(i.close)}</span><span class="chg ${dir}">${pct(i.change_pct)}</span></div>
-    <div class="updbar">
-      <div class="updctrls">
-        <button class="upd-btn"><span aria-hidden="true">↻</span> 更新價格</button>
-        <label class="autolbl">自動更新
-          <select class="upd-auto"><option value="off">關閉</option><option value="30">每 30 秒</option><option value="60">每 1 分</option><option value="300">每 5 分</option></select>
-        </label>
+  const chgAbs = (i.change != null) ? i.change : ((i.close != null && i.change_pct != null) ? i.close - i.close / (1 + i.change_pct / 100) : null);
+  const arrow = i.change_pct == null ? "" : i.change_pct >= 0 ? "▲" : "▼";
+  const mktTag = m === "TW" ? "台股" : "美股";
+  // 股票報價主卡：橫向大卡，左=名稱/現價大字，右=更新狀態與控制
+  const header = `<div class="quote-hero">
+      <div class="qh-left">
+        <div class="qh-name"><h3>${esc(a.name)} <span class="code">${esc(a.symbol)}</span></h3><span class="mkt-tag">${mktTag}</span>${a.industry ? `<span class="muted qh-ind">· ${esc(a.industry)}</span>` : ""}</div>
+        <div class="qh-price"><span class="px ${dir}">${fmt(i.close)}</span><span class="chg ${dir}">${arrow} ${chgAbs != null ? fmt(Math.abs(chgAbs)) : ""} (${pct(i.change_pct)})</span></div>
       </div>
-      <div class="updmeta"><span class="upd-status">最後更新：${esc(meta.updatedAt)}</span>｜資料日：${esc(a.lastDate)}｜價格類型：${PRICE_TYPE}｜資料狀態：${statusTxt}</div>
+      <div class="qh-right">
+        <div class="qh-meta"><div><span>更新時間</span><b class="upd-status">${esc(meta.updatedAt)}</b></div><div><span>資料日</span><b>${esc(a.lastDate)}</b></div><div><span>價格類型</span><b>${PRICE_TYPE}</b></div><div><span>狀態</span><b>${statusTxt}</b></div></div>
+        <div class="updctrls"><button class="upd-btn"><span aria-hidden="true">↻</span> 更新價格</button><label class="autolbl">自動更新 <select class="upd-auto"><option value="off">關閉</option><option value="30">每 30 秒</option><option value="60">每 1 分</option><option value="300">每 5 分</option></select></label></div>
+      </div>
     </div>
     <p class="px-note">目前價格以 FinMind 最新可取得資料為準，可能不是即時逐筆報價。</p>
-    ${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}
-    <div class="sumbadges"><span class="badge ${actCls}">${esc(d.action)}</span><span>信心 <b>${d.score}</b>/100</span><span>風險 <b>${esc(d.risk)}</b></span><span>位置 <b>${esc(d.position)}</b></span></div>`;
+    ${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}`;
 
   let hold = "";
   if (a.holding) { const h = a.holding, cls = h.ret >= 0 ? "pnl-up" : "pnl-down"; hold = `<div class="holding"><b>💼 我的持股</b>　成本 ${fmt(h.cost)}　股數 ${fmt(h.qty, 0)}　市值 ${fmt(h.marketValue)}　<span class="${cls}">報酬 ${fmt(h.ret)}%／損益 ${fmt(h.pnl)}</span>　建議：<b>${esc(h.suggestion)}</b></div>`; }
 
   const L = evaluateStockLogic(a);
-  const decision = `<div class="block decision"><h4>① 投資決策摘要</h4><p>建議：<b>${esc(d.action)}</b>　｜信心分數：${d.score}/100　｜風險等級：${esc(d.risk)}　｜目前位置：${esc(d.position)}</p><p class="op">${esc(d.operation)}</p><p class="sl-note">📌 ${esc(L.decNote)}</p></div>`;
+  // 投資決策摘要：橫向 badge 化 + 信心分數環
+  const decision = `<div class="block decision decision-hero">
+      <div class="dh-main"><h4>① 投資決策摘要</h4>
+        <div class="dh-badges"><span class="badge ${actCls}">建議 ${esc(d.action)}</span><span class="dh-b">信心分數 <b>${d.score}/100</b></span><span class="dh-b">風險等級 <b>${esc(d.risk)}</b></span><span class="dh-b">目前位置 <b>${esc(d.position)}</b></span></div>
+        <p class="op">${esc(d.operation)}</p><p class="sl-note">📌 ${esc(L.decNote)}</p></div>
+      <div class="dh-ring" style="--p:${d.score == null ? 0 : d.score}"><div class="dh-ring-core"><b>${d.score == null ? "—" : d.score}</b><span>信心分數</span></div></div>
+    </div>`;
   // 進場限制：只有真正觸發風控（RSI 過熱 / 內部 veto）時才顯示，用使用者語言、不顯示工程字眼
   let limitBlock = "";
   if (d.veto || d.overheated) {
@@ -583,14 +591,15 @@ function renderResult(a, meta) {
   }
   const liArr = (arr) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
   const subLabel = (v, max) => v != null ? `${v} / ${max}` : (L.isUS ? "資料源限制" : "資料不足");
-  const breakdown = L.isETF
-    ? `技術面：${L.sub.tech} / ${L.sub.techMax}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}｜價格位置：${L.sub.pos} / ${L.sub.posMax}`
-    : `基本面：${subLabel(L.sub.fund, L.sub.fundMax)}｜技術面：${L.sub.tech} / ${L.sub.techMax}｜籌碼面：${subLabel(L.sub.chip, L.sub.chipMax)}｜風險控制：${L.sub.risk} / ${L.sub.riskMax}`;
-  // 選股邏輯「摘要」放中央；支持/風險/資料不足等明細放底部
+  const bar = (label, v, max) => `<div class="sl-bar"><div class="sl-bar-top"><span>${label}</span><b>${subLabel(v, max)}</b></div><div class="sl-track"><i style="width:${v != null && max ? Math.round(v / max * 100) : 0}%"></i></div></div>`;
+  const bars = L.isETF
+    ? bar("技術面", L.sub.tech, L.sub.techMax) + bar("價格位置", L.sub.pos, L.sub.posMax) + bar("風險控制", L.sub.risk, L.sub.riskMax)
+    : bar("基本面", L.sub.fund, L.sub.fundMax) + bar("技術面", L.sub.tech, L.sub.techMax) + bar("籌碼面", L.sub.chip, L.sub.chipMax) + bar("風險控制", L.sub.risk, L.sub.riskMax);
+  // 選股邏輯「摘要」（含分數拆解進度條）放中央；支持/風險/資料不足等明細放底部
   const selSummary = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p>標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
-      <p class="sl-sub">分數拆解 — ${breakdown}</p>
+      <div class="sl-bars">${bars}</div>
       <p class="exp">${esc(categoryNote(L.cat))}</p></div>`;
   const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
     + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><ul>${liArr(L.risks)}</ul></div>`
@@ -645,7 +654,7 @@ function renderResult(a, meta) {
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></div>`;
 
   // 三欄分流：中央=現價/決策/K線/選股摘要/結論；右側=基本面/技術面/籌碼面/資料來源；底部=支持/風險/價格區間
-  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}${concl}</div>`;
+  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}<div class="center-foot">${selSummary}${concl}</div></div>`;
   const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}</div>`;
   const bottom = `<div class="result bottom-result"><div class="bottom-cards">${reasonsBottom}${zones}</div><p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
   return { center, right, bottom };
