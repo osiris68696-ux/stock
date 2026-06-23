@@ -1,7 +1,7 @@
 "use strict";
 /* 台美股智慧分析 — GitHub Pages 純前端
  * 安全：固定資料來源 FinMind 開放 API（免金鑰）；不使用 eval/exec；不接受使用者自訂 URL；
- * 持股只存 localStorage；無 .env / Token / Chat ID / 私人持股；K 線為 Canvas 即時繪製（非圖片、非 AI）。
+ * 持股只存 localStorage；無任何金鑰 / Token / Chat ID / 私人持股；K 線為 Canvas 即時繪製（非圖片、非 AI）。
  * FinMind 匿名僅日線（盤中/逐筆需付費等級），故價格一律標示「最新收盤價」，不偽裝即時報價。
  */
 const LS_KEY = "twus_holdings";
