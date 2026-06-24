@@ -266,7 +266,27 @@ function evaluateStockLogic(a) {
   else if (grade === "A" || grade === "B") { conclusion = "各面向條件相對占優，可分批觀察、避免一次重壓，並留意均線與量能變化。"; decNote = "各面向條件占優，可分批觀察、避免一次重壓。"; }
   else { conclusion = "條件普通，建議分批觀察、貼近支撐再評估，避免追高。"; decNote = "條件普通，建議分批觀察、貼近支撐再評估。"; }
 
-  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax, pos: posS, posMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote };
+  // 選股邏輯「分析摘要」：依標的分類給不同敘述，並解釋風險控制分數（item 六~九）
+  const riskLow = riskS <= riskMax * 0.4, riskGood = riskS >= riskMax * 0.7;
+  const riskNote = riskLow
+    ? `風險控制分數偏低（${riskS} / ${riskMax}），通常代表目前價格位置不夠安全${rsi != null && rsi >= 70 ? "（RSI 偏高、短線過熱）" : ""}${farSup ? "、距離支撐較遠" : ""}${nearRes ? "、接近壓力區" : ""}，若此時追高，停損空間較大。`
+    : riskGood
+      ? `風險控制分數較佳（${riskS} / ${riskMax}），代表目前價格位置相對安全、短線沒有明顯過熱，但仍建議分批而非一次投入。`
+      : `風險控制分數中等（${riskS} / ${riskMax}），價格位置尚可，建議分批進場並留意均線與量能變化。`;
+  let analysis;
+  if (cat === "資料不足" || noTech) {
+    analysis = "目前技術 / 基本面資料不足，僅能做初步觀察，不建議只憑此結果進場。";
+  } else if (isETF) {
+    analysis = `ETF 是一籃子標的，不以單一公司 EPS / P/E / P/B 評估，而是看追蹤標的走勢、價格位置（RSI、支撐 / 壓力）與風險控制。${riskNote}${farSup || nearRes ? "目前距離支撐較遠或接近壓力，不適合一次追高，較適合定期定額或等待回落。" : "若 RSI 健康且價格接近支撐，可列入分批觀察，仍以長期配置、定期定額為宜。"}`;
+  } else if (isUS) {
+    analysis = `這類美股目前受純前端資料源限制，基本面與籌碼面只能保守處理，並不代表公司本身基本面不佳；主要依價格、均線、RSI、支撐 / 壓力判斷。${belowMa20 ? "股價跌破 MA20，短線趨勢尚未修復；即使 RSI 回到健康區間，也只代表追高風險下降，不代表可立即進場。" : "技術面尚未轉弱，但仍建議觀察均線與量能。"}${riskNote}`;
+  } else if (cat === "金融股") {
+    analysis = `金融股通常以殖利率、股價淨值比（P/B）、利率環境與獲利穩定性評估，偏防禦 / 存股配置。${riskNote}${riskLow ? "短線位置可能不夠安全，較適合分批或等待回落，而非一次追高。" : "若價格位於合理區，可分批布局、長期持有。"}`;
+  } else {
+    analysis = `這檔股票需同時觀察基本面、技術面與籌碼面。${fund == null ? "基本面資料目前不足，" : ""}${chipS == null ? "籌碼面資料目前不足，" : ""}若分數集中在技術面，代表短線或許有機會，但不適合只靠均線判斷進場。${riskNote}`;
+  }
+
+  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax, pos: posS, posMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote, analysis };
 }
 
 /* ---------- 文字段落 ---------- */
@@ -503,6 +523,13 @@ function clearResult(loadingMsg) {
   $("centerResult").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
 }
+// 手機版（≤720px）預設收合基本面 / 技術面 / 籌碼面 / 資料來源；桌機展開
+function syncAccordion() {
+  const mob = window.matchMedia("(max-width: 720px)").matches;
+  document.querySelectorAll("#rightResult .info-section").forEach((d) => {
+    if (mob) d.removeAttribute("open"); else d.setAttribute("open", "");
+  });
+}
 async function analyze(symbol, market, cost, qty) {
   symbol = String(symbol || "").trim().toUpperCase();
   const seq = ++SEQ; stopAuto();
@@ -531,6 +558,7 @@ async function refreshCurrent(seq, isFirst) {
     const wrap = $("centerResult").querySelector(".kline-wrap");
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
     setupCurControls();
+    syncAccordion();
     if (!isFirst && prevClose != null && a.ind.close != null && a.ind.close !== prevClose) flashCur(a.ind.close > prevClose);
   } catch (e) {
     if (seq !== SEQ) return;
@@ -599,8 +627,8 @@ function renderResult(a, meta) {
   const selSummary = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p>標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
-      <div class="sl-bars">${bars}</div>
-      <p class="exp">${esc(categoryNote(L.cat))}</p></div>`;
+      <p class="sl-analysis"><b>分析摘要：</b>${esc(L.analysis)}</p>
+      <div class="sl-bars">${bars}</div></div>`;
   const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
     + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><ul>${liArr(L.risks)}</ul></div>`
     + (L.missing.length ? `<div class="block sl-miss"><h4>⚠ 資料不足</h4><ul>${liArr(L.missing)}</ul></div>` : "")
@@ -608,26 +636,26 @@ function renderResult(a, meta) {
 
   let fundamental;
   if (L.cat === "ETF") {
-    fundamental = `<div class="block"><h4>② 標的屬性　<small>ETF</small></h4>` + ul([
+    fundamental = `<details class="block info-section" open><summary>② 標的屬性　<small>ETF</small></summary>` + ul([
       "類型：ETF（一籃子成分股，非單一公司）",
       "評估方式：以追蹤標的走勢、價格位置與風險控制為主",
       "適合策略：分批、定期定額、長期配置",
       "注意事項：短線仍需避開過熱與距離支撐過遠的位置",
-    ]) + `</div>`;
+    ]) + `</details>`;
   } else if (m !== "TW") {
-    fundamental = `<div class="block"><h4>② 基本面　<small>資料源限制</small></h4><p>基本面：<b>資料源限制</b></p>`
-      + `<p class="exp">目前純前端版本尚未接入穩定的美股基本面資料源，因此 EPS、P/E、P/B、營收成長率暫不納入完整評分。這是資料源限制，不代表該公司基本面不佳。未來若建立 market_data_backend，才會補 SEC / Finnhub / Alpha Vantage / FMP 等資料源。</p></div>`;
+    fundamental = `<details class="block info-section" open><summary>② 基本面　<small>資料源限制</small></summary><p>基本面：<b>資料源限制</b></p>`
+      + `<p class="exp">目前純前端版本尚未接入穩定的美股基本面資料源，因此 EPS、P/E、P/B、營收成長率暫不納入完整評分。這是資料源限制，不代表該公司基本面不佳。未來若建立 market_data_backend，才會補 SEC / Finnhub / Alpha Vantage / FMP 等資料源。</p></details>`;
   } else {
     const fundList = [
       `EPS（近四季合計）：${f.eps != null ? fmt(f.eps, 2) : "資料不足"}`, `本益比 P/E：${f.pe != null ? fmt(f.pe, 1) : "資料不足"}`, `股價淨值比 P/B：${f.pb != null ? fmt(f.pb, 2) : "資料不足"}`,
       `殖利率：${f.dy != null ? fmt(f.dy, 2) + "%" : "資料不足"}`, `營收成長率（YoY）：${f.revYoy != null ? (f.revYoy >= 0 ? "+" : "") + fmt(f.revYoy, 1) + "%" : "資料不足"}`,
     ];
-    fundamental = `<div class="block"><h4>② 基本面　<small>買什麼公司</small></h4>${ul(fundList)}<p class="exp">${esc(fundamentalExplain(f, m))}</p></div>`;
+    fundamental = `<details class="block info-section" open><summary>② 基本面　<small>買什麼公司</small></summary>${ul(fundList)}<p class="exp">${esc(fundamentalExplain(f, m))}</p></details>`;
   }
 
   const volTxt = i.volRatio != null ? `今量為 20 日均量 ${fmt(i.volRatio, 2)} 倍` : "資料不足";
   const techList = [`MA5：${fmt(i.ma5)}　MA10：${fmt(i.ma10)}`, `MA20：${fmt(i.ma20)}　MA60：${fmt(i.ma60)}`, `RSI：${i.rsi == null ? "—" : fmt(i.rsi, 0) + (i.rsi >= 70 ? "（過熱）" : i.rsi <= 30 ? "（偏弱）" : "（健康）")}`, `支撐：${fmt(i.support)}　壓力：${fmt(i.resistance)}`, `成交量變化：${volTxt}`];
-  const technical = `<div class="block"><h4>③ 技術面　<small>什麼時候買賣</small></h4>${ul(techList)}<p class="exp">${esc(technicalExplain(i))}</p></div>`;
+  const technical = `<details class="block info-section" open><summary>③ 技術面　<small>什麼時候買賣</small></summary>${ul(techList)}<p class="exp">${esc(technicalExplain(i))}</p></details>`;
 
   let chipBody;
   if (a.chip.ok) { const c = a.chip, it = [];
@@ -636,7 +664,7 @@ function renderResult(a, meta) {
     if (c.shortBal != null) it.push(`融券餘額：${thou(c.shortBal)} 張（增減 ${signed(c.shortChg)}）`);
     chipBody = ul(it) + `<p class="exp">${esc(c.explain)}</p>`;
   } else chipBody = `<p>${esc(a.chip.note)}</p><p class="exp">${esc(a.chip.explain)}</p>`;
-  const chip = `<div class="block"><h4>④ 籌碼面　<small>看主力動向</small></h4>${chipBody}</div>`;
+  const chip = `<details class="block info-section" open><summary>④ 籌碼面　<small>看主力動向</small></summary>${chipBody}</details>`;
 
   const kline = `<div class="block kline-wrap"><h4>⑤ K 線圖　<small>近 60 日 · 電腦：滾輪縮放／拖曳平移　手機：雙指縮放／單指平移</small></h4>
       <div class="kl-tools"><button data-kl="in">＋ 放大</button><button data-kl="out">－ 縮小</button><button data-kl="reset">⟲ 重設</button><button data-kl="30">30日</button><button data-kl="60">60日</button><button data-kl="120">120日</button><span class="kl-range"></span></div>
@@ -649,9 +677,9 @@ function renderResult(a, meta) {
   const zones = `<div class="block"><h4>⑧ 價格區間 / 進場參考</h4>${z ? `<pre class="zones">${esc(z)}</pre>` : "<p>資料不足</p>"}</div>`;
   const concl = `<div class="block conclusion"><h4>⑨ 結論</h4><p>${esc(conclusion(i, d))}</p></div>`;
   const srcList = [`資料來源：${esc(a.source)}`, `最新資料日期：${esc(a.lastDate)}`, `最新收盤價：${fmt(i.close)}`, `資料筆數：${a.rows} 筆`, `是否為最近交易日資料：${recent ? "是（" + lag + " 天內）" : "否（距今約 " + lag + " 天）"}`, `價格類型：${PRICE_TYPE}`];
-  const source = `<div class="block source"><h4>⑩ 資料來源與更新時間</h4>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}
+  const source = `<details class="block source info-section" open><summary>⑩ 資料來源與更新時間</summary>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
-      <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></div>`;
+      <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></details>`;
 
   // 三欄分流：中央=現價/決策/K線/選股摘要/結論；右側=基本面/技術面/籌碼面/資料來源；底部=支持/風險/價格區間
   const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}</div>`;
@@ -870,7 +898,7 @@ function renderGold(g, meta) {
 }
 
 /* ---------- resize 重繪 ---------- */
-let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => { document.querySelectorAll(".kline").forEach((cv) => { if (cv._redraw) cv._redraw(); }); }, 150); });
+let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => { document.querySelectorAll(".kline").forEach((cv) => { if (cv._redraw) cv._redraw(); }); syncAccordion(); }, 150); });
 
 /* ---------- 事件 ---------- */
 function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGold(); }

@@ -358,8 +358,16 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .center-panel .kline-wrap h4 small { color: var(--muted); }
 
 /* 右側分析摘要卡精簡（隱藏長說明段落，只留重點條列） */
-.side-result .exp { display: none; }
-.side-result .block h4 { font-size: 1rem; }
+.side-result summary { font-size: 1.02rem; }
+/* 選股邏輯：分析摘要段落 */
+.sl-analysis { margin: 8px 0 6px; font-size: .95rem; line-height: 1.7; color: #cfe0ee; }
+.sl-analysis b { color: var(--cyan); }
+/* 基本面 / 技術面 / 籌碼面 / 資料來源：可折疊（details/summary） */
+.info-section > summary { list-style: none; cursor: pointer; font-weight: 800; color: #eaf6ff; display: flex; align-items: center; gap: 8px; }
+.info-section > summary::-webkit-details-marker { display: none; }
+.info-section > summary::after { content: "▾"; margin-left: auto; color: var(--muted); font-size: .8rem; transition: transform .15s; }
+.info-section:not([open]) > summary::after { transform: rotate(-90deg); }
+.info-section[open] > summary { margin-bottom: 8px; }
 
 /* 超寬螢幕：側欄略寬、K 線更高 */
 @media (min-width: 1600px) {
@@ -393,11 +401,14 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 /* ===== 手機 ≤720：真正手機看盤 App ===== */
 @media (max-width: 720px) {
-  body { font-size: 14px; }
-  .dashboard-shell { padding: 12px; gap: 12px; }
+  body { font-size: 14px; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .dashboard-shell { padding: 12px 12px calc(72px + env(safe-area-inset-bottom)); gap: 12px; }
+  /* 所有主卡片一律滿版、寬度一致 */
+  .card, .side-panel .card, .result, .result .block, .quote-hero, .decision, .selection { width: 100%; max-width: 100%; box-sizing: border-box; }
   .card, .side-panel .card, .result .block { padding: 14px; border-radius: 14px; }
   .top-title .titlebox { margin: 2px 0; } .tb-mid h1 { font-size: 1.4rem; } .tb-mid { padding: 7px 16px; }
-  h2, h3, .result .block h4 { font-size: 1.06rem; }
+  h2, h3, .result .block h4, .info-section > summary { font-size: 1.08rem; }
+  p, li { font-size: 15px; line-height: 1.7; }
   button, select, input { min-height: 42px; font-size: 15px; }
   /* 查詢前 HUD：隱藏大圓環，只留簡短提示，不佔滿第一屏 */
   .center-hub { min-height: 0; padding: 16px 14px; gap: 10px; }
@@ -406,29 +417,35 @@ html, body { max-width: 100%; overflow-x: hidden; }
   /* 報價主卡：現價 ~37px，不過大 */
   .quote-hero { padding: 14px 16px; }
   .quote-hero .px { font-size: 2.3rem; } .qh-name h3 { font-size: 1.2rem; }
-  /* 投資決策摘要：隱藏大圓環，只保留 badge */
+  /* 投資決策摘要：隱藏大圓環，只保留 badge + 短句 */
   .decision-hero { flex-direction: column; align-items: stretch; }
   .dh-ring { display: none; }
-  /* K 線工具列：水平滑動、不爆版、按鈕 40px 好點 */
-  .kl-tools { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-  .kl-tools button { flex: 0 0 auto; min-height: 40px; }
-  .kl-tools .kl-range { flex: 0 0 auto; }
-  .center-panel canvas.kline { height: 300px; }
+  .decision-hero .op, .decision-hero .sl-note { font-size: 16px; line-height: 1.75; }
+  /* K 線工具列：3 欄 grid、不爆版、按鈕 48px 好點 */
+  .kl-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kl-tools button { min-height: 48px; font-size: 16px; padding: 8px 6px; }
+  .kl-tools .kl-range { grid-column: 1 / -1; text-align: center; }
+  .center-panel canvas.kline { height: 340px; }
   /* 選股分數拆解：改 2 欄小卡、隱藏長條 */
   .sl-bars { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .sl-bar { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(3, 12, 22, .5); }
   .sl-bar .sl-track { display: none; }
   .sl-bar-top { flex-direction: column; align-items: flex-start; gap: 2px; font-size: .9rem; }
+  .sl-analysis { font-size: 15px; line-height: 1.75; }
+  /* 折疊區：summary 像卡片標題、好點按 */
+  .info-section > summary { padding: 2px 0; min-height: 40px; }
   /* modal 不超出螢幕 */
   .modal-dialog { max-width: 100%; }
 }
 
 /* ===== 小手機 ≤430：再壓縮，避免爆版 ===== */
 @media (max-width: 430px) {
-  .dashboard-shell { padding: 10px; gap: 10px; }
+  .dashboard-shell { padding: 10px 10px calc(72px + env(safe-area-inset-bottom)); gap: 10px; }
   .card, .result .block { padding: 12px; }
   .tb-mid h1 { font-size: 1.22rem; } .tb-sub { font-size: .58rem; letter-spacing: 1px; }
   .quote-hero .px { font-size: 1.95rem; } .qh-name h3 { font-size: 1.1rem; }
   .qh-meta { grid-template-columns: 1fr 1fr; gap: 3px 12px; }
   .dh-badges { gap: 6px; } .dh-b { font-size: .82rem; padding: 3px 8px; }
+  .kl-tools button { font-size: 15px; min-height: 46px; }
+  .center-panel canvas.kline { height: 320px; }
 }
