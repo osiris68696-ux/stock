@@ -969,3 +969,17 @@ async function loadGoldMini() {
 
 renderHoldings();
 loadGoldMini();
+
+// 前端防複製（一般阻擋；輸入框 / 下拉聚焦時不影響正常輸入與選取）
+(function () {
+  const editable = (el) => !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+  document.addEventListener("contextmenu", (e) => { if (!editable(e.target)) e.preventDefault(); });
+  document.addEventListener("copy", (e) => { if (!editable(e.target)) e.preventDefault(); });
+  document.addEventListener("keydown", (e) => {
+    if (editable(e.target)) return;
+    const k = (e.key || "").toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (k === "c" || k === "s" || k === "u")) e.preventDefault();
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (k === "i" || k === "j" || k === "c")) e.preventDefault();
+    if (k === "f12") e.preventDefault();
+  });
+})();

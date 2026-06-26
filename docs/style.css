@@ -20,13 +20,13 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-even
 body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
   background: repeating-linear-gradient(180deg, rgba(0, 220, 255, .016) 0 2px, transparent 2px 5px); }
 
-.shell { max-width: 1180px; width: 100%; margin: 0 auto; padding: 18px 20px 64px; }
+.shell { max-width: 960px; width: 100%; margin: 0 auto; padding: 18px 20px 64px; }
 h1, h2, h3, h4 { letter-spacing: .4px; }
 
 /* 頂部 */
 .appbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(7, 16, 28, .82), rgba(7, 16, 28, .55)); backdrop-filter: blur(10px); box-shadow: 0 1px 18px rgba(0, 180, 255, .1); }
-.appbar-inner { max-width: 1180px; width: 100%; margin: 0 auto; padding: 11px 20px; display: flex; align-items: center; gap: 12px; }
+.appbar-inner { max-width: 960px; width: 100%; margin: 0 auto; padding: 11px 20px; display: flex; align-items: center; gap: 12px; }
 .brand { font-weight: 800; font-size: 1.04rem; color: #eaf6ff; text-shadow: 0 0 14px rgba(0, 200, 255, .5); }
 .appbar-status { display: none; }
 
@@ -229,19 +229,22 @@ body.modal-open { overflow: hidden; }
 
 /* ===================== 科技數據大屏版型 ===================== */
 html, body { max-width: 100%; overflow-x: hidden; }
+/* 前端防複製（僅一般阻擋，不影響輸入框） */
+body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
+input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user-select: text; user-select: text; }
 
 /* ===== AI-900 中央版心：單欄工具型版面（Hero 沿用上方 .hero 樣式） ===== */
-/* 上方輔助入口卡（黃金 / 新聞，置中兩張） */
-.entry-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 14px; margin: 18px auto 4px; justify-content: center; }
-.entry-card { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-height: 104px; justify-content: center; color: var(--fg);
+/* 上方輔助入口卡（黃金 / 新聞，與下方卡片同寬、平均兩欄） */
+.entry-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; width: 100%; margin: 16px 0 4px; }
+.entry-card { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-height: 104px; padding: 20px; justify-content: center; color: var(--fg);
   background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--glow);
   transition: transform .15s, border-color .15s, box-shadow .15s; }
 .entry-card:hover { transform: translateY(-4px); border-color: var(--line2); box-shadow: 0 14px 40px rgba(0, 190, 255, .26); }
 .entry-card .ico { font-size: 1.7rem; filter: drop-shadow(0 0 10px rgba(0, 200, 255, .5)); }
 .entry-card b { font-size: 1rem; color: #eaf6ff; } .entry-card small { color: var(--muted); font-size: .76rem; }
 
-/* 中央視覺 HUD（純 CSS，無功能） */
-.hud { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; margin: 22px auto 6px; padding: 24px 16px; max-width: 640px;
+/* 中央視覺 HUD（純 CSS，無功能；與主功能卡同寬） */
+.hud { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; width: 100%; margin: 16px 0 6px; padding: 26px 16px;
   border: 1px solid var(--line); border-radius: 20px; background: radial-gradient(120% 90% at 50% 20%, rgba(0, 90, 150, .16), transparent 60%), linear-gradient(180deg, var(--panel-a), var(--panel-b)); box-shadow: var(--glow); }
 .hud-ring { width: 150px; height: 150px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;
   box-shadow: inset 0 0 28px rgba(0, 180, 255, .14), 0 0 28px rgba(0, 180, 255, .12); }
@@ -334,7 +337,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 /* 超寬螢幕：版心略寬、K 線略高 */
 @media (min-width: 1400px) {
-  .shell { max-width: 1240px; }
   #result canvas.kline { height: 520px; }
 }
 
