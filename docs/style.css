@@ -231,8 +231,8 @@ body.modal-open { overflow: hidden; }
 html, body { max-width: 100%; overflow-x: hidden; }
 
 /* ===== AI-900 中央版心：單欄工具型版面（Hero 沿用上方 .hero 樣式） ===== */
-/* 功能入口卡 */
-.entry-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0 4px; }
+/* 上方輔助入口卡（黃金 / 新聞，置中兩張） */
+.entry-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 14px; margin: 18px auto 4px; justify-content: center; }
 .entry-card { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-height: 104px; justify-content: center; color: var(--fg);
   background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--glow);
   transition: transform .15s, border-color .15s, box-shadow .15s; }
@@ -240,9 +240,31 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .entry-card .ico { font-size: 1.7rem; filter: drop-shadow(0 0 10px rgba(0, 200, 255, .5)); }
 .entry-card b { font-size: 1rem; color: #eaf6ff; } .entry-card small { color: var(--muted); font-size: .76rem; }
 
+/* 中央視覺 HUD（純 CSS，無功能） */
+.hud { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; margin: 22px auto 6px; padding: 24px 16px; max-width: 640px;
+  border: 1px solid var(--line); border-radius: 20px; background: radial-gradient(120% 90% at 50% 20%, rgba(0, 90, 150, .16), transparent 60%), linear-gradient(180deg, var(--panel-a), var(--panel-b)); box-shadow: var(--glow); }
+.hud-ring { width: 150px; height: 150px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 28px rgba(0, 180, 255, .14), 0 0 28px rgba(0, 180, 255, .12); }
+.hud-ring::before { content: ""; position: absolute; inset: -2px; border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--cyan), transparent 40%, transparent 62%, var(--purple), transparent);
+  -webkit-mask: radial-gradient(circle, transparent 64%, #000 66%); mask: radial-gradient(circle, transparent 64%, #000 66%); animation: spin 9s linear infinite; }
+.hud-ring::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(0, 200, 255, .25); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hud-core { position: relative; z-index: 1; text-align: center; line-height: 1.2; }
+.hud-core b { display: block; font-size: 1rem; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
+.hud-core span { font-size: .62rem; letter-spacing: 3px; color: var(--muted); }
+.hud-hint { margin: 0; color: #cfe6f7; font-size: 1rem; letter-spacing: .5px; }
+.hud-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.hud-tags span { font-size: .78rem; color: #bcd9ee; padding: 5px 13px; border-radius: 999px; border: 1px solid var(--line); background: rgba(3, 14, 26, .5); }
+.hud-src { margin: 0; color: var(--muted); font-size: .76rem; }
+
 /* 卡片單欄堆疊 */
 .shell > .card { margin: 16px 0; }
 .main-card { border-color: var(--line2); box-shadow: 0 0 28px rgba(0, 180, 255, .12); }
+/* 開始分析按鈕：桌機不滿版、不過粗 */
+#go.primary-lg { width: auto; max-width: 300px; min-height: 46px; padding: 0 30px; margin-top: 12px; }
+/* 新聞 modal 市場切換 */
+.news-switch { margin-bottom: 4px; } .news-switch button { width: auto; padding: 8px 14px; font-size: .9rem; }
 .query-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
 .query-row .field { margin: 0; } .query-row .grow { flex: 1 1 200px; }
 .goldmini .gm-price { font-size: 1.6rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 14px rgba(255, 200, 80, .4); font-variant-numeric: tabular-nums; }
@@ -293,6 +315,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .sl-seg p { margin: 0; line-height: 1.75; color: #cfe0ee; }
 .sl-seg ul { margin: 0; padding-left: 18px; } .sl-seg li { margin: 5px 0; line-height: 1.7; color: #c4d6e6; }
 .sl-note-seg h5 { color: var(--muted); }
+.sl-risknote { margin: 0 0 6px; line-height: 1.7; color: #e6c2cb; }
 /* 分數拆解小卡（取代長條 progress bar） */
 .score-chips { display: flex; flex-wrap: wrap; gap: 10px; }
 .score-chip { display: inline-flex; flex-direction: column; gap: 2px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(3, 12, 22, .55); min-width: 96px; }
@@ -325,7 +348,11 @@ html, body { max-width: 100%; overflow-x: hidden; }
   body { font-size: 14px; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   .shell { padding: 14px 14px calc(72px + env(safe-area-inset-bottom)); }
   .hero { padding: 14px 8px 2px; } .hero h1 { font-size: 1.6rem; } .tagline { font-size: .92rem; }
-  .entry-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .entry-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: none; }
+  /* HUD 手機版縮小 */
+  .hud { padding: 18px 14px; gap: 12px; } .hud-ring { width: 120px; height: 120px; } .hud-hint { font-size: .95rem; }
+  /* 開始分析按鈕：手機滿版好點 */
+  #go.primary-lg { width: 100%; max-width: none; }
   /* 所有主卡片一律滿版、寬度一致 */
   .card, .result, .result .block, .quote-hero, .decision, .selection { width: 100%; max-width: 100%; box-sizing: border-box; }
   .shell > .card, .result .block { padding: 14px; border-radius: 16px; margin: 14px 0; }

@@ -273,20 +273,21 @@ function evaluateStockLogic(a) {
     : riskGood
       ? `風險控制分數較佳（${riskS} / ${riskMax}），代表目前價格位置相對安全、短線沒有明顯過熱，但仍建議分批而非一次投入。`
       : `風險控制分數中等（${riskS} / ${riskMax}），價格位置尚可，建議分批進場並留意均線與量能變化。`;
-  let analysis;
+  // 標的屬性：依分類說明「這類標的該怎麼看」（不混入優勢 / 風險 / 操作，分段呈現）
+  let attr;
   if (cat === "資料不足" || noTech) {
-    analysis = "目前技術 / 基本面資料不足，僅能做初步觀察，不建議只憑此結果進場。";
+    attr = "目前技術 / 基本面資料不足，僅能做初步觀察，不建議只憑此結果進場。";
   } else if (isETF) {
-    analysis = `ETF 是一籃子標的，不以單一公司 EPS / P/E / P/B 評估，而是看追蹤標的走勢、價格位置（RSI、支撐 / 壓力）與風險控制。${riskNote}${farSup || nearRes ? "目前距離支撐較遠或接近壓力，不適合一次追高，較適合定期定額或等待回落。" : "若 RSI 健康且價格接近支撐，可列入分批觀察，仍以長期配置、定期定額為宜。"}`;
+    attr = "ETF 是一籃子標的，不適合用單一公司 EPS / P/E / P/B 判斷，應以追蹤標的走勢、價格位置（RSI、支撐 / 壓力）與風險控制為主，操作上偏分批、定期定額與長期配置，不宜短線追高。";
   } else if (isUS) {
-    analysis = `這類美股目前受純前端資料源限制，基本面與籌碼面只能保守處理，並不代表公司本身基本面不佳；主要依價格、均線、RSI、支撐 / 壓力判斷。${belowMa20 ? "股價跌破 MA20，短線趨勢尚未修復；即使 RSI 回到健康區間，也只代表追高風險下降，不代表可立即進場。" : "技術面尚未轉弱，但仍建議觀察均線與量能。"}${riskNote}`;
+    attr = "目前純前端版本尚未接入完整美股基本面與籌碼資料，因此美股分析主要依價格、均線、RSI、支撐 / 壓力判斷。這是資料源限制，不代表公司本身基本面不佳；未來 market_data_backend 才能補 SEC / Finnhub / Alpha Vantage / FMP 等資料。";
   } else if (cat === "金融股") {
-    analysis = `金融股通常以殖利率、股價淨值比（P/B）、利率環境與獲利穩定性評估，偏防禦 / 存股配置。${riskNote}${riskLow ? "短線位置可能不夠安全，較適合分批或等待回落，而非一次追高。" : "若價格位於合理區，可分批布局、長期持有。"}`;
+    attr = "金融股通常以殖利率、股價淨值比（P/B）、利率環境與獲利穩定性評估，偏向防禦與存股配置；短線仍需留意是否過熱。";
   } else {
-    analysis = `這檔股票需同時觀察基本面、技術面與籌碼面。${fund == null ? "基本面資料目前不足，" : ""}${chipS == null ? "籌碼面資料目前不足，" : ""}若分數集中在技術面，代表短線或許有機會，但不適合只靠均線判斷進場。${riskNote}`;
+    attr = "一般個股需同時觀察基本面、技術面與籌碼面，並留意目前價格是否接近支撐或壓力，避免只靠單一面向判斷進場。";
   }
 
-  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax, pos: posS, posMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote, analysis };
+  return { cat, grade, label, total, screen, isETF, isUS, sub: { tech, techMax, fund, fundMax, chip: chipS, chipMax, risk: riskS, riskMax, pos: posS, posMax }, pass, risks, missing, dataNotes, veto, hardLimit, conclusion, decNote, attr, riskNote };
 }
 
 /* ---------- 文字段落 ---------- */
@@ -531,6 +532,7 @@ function syncAccordion() {
 }
 async function analyze(symbol, market, cost, qty) {
   symbol = String(symbol || "").trim().toUpperCase();
+  const hud = $("hud"); if (hud) hud.style.display = "none";   // 查詢後隱藏 HUD 視覺區
   const seq = ++SEQ; stopAuto();
   if (market === "TW" && !TW_RE.test(symbol)) { clearResult(); $("result").innerHTML = `<div class="result"><div class="err">⚠️ 台股代號格式不正確（例 2330）</div></div>`; return; }
   if (market === "US" && !US_RE.test(symbol)) { clearResult(); $("result").innerHTML = `<div class="result"><div class="err">⚠️ 美股代號格式不正確（例 AAPL）</div></div>`; return; }
@@ -624,14 +626,14 @@ function renderResult(a, meta) {
     ? scoreChip("技術面", L.sub.tech, L.sub.techMax) + scoreChip("價格位置", L.sub.pos, L.sub.posMax) + scoreChip("風險控制", L.sub.risk, L.sub.riskMax)
     : scoreChip("基本面", L.sub.fund, L.sub.fundMax) + scoreChip("技術面", L.sub.tech, L.sub.techMax) + scoreChip("籌碼面", L.sub.chip, L.sub.chipMax) + scoreChip("風險控制", L.sub.risk, L.sub.riskMax);
   const noteList = L.missing.concat(L.dataNotes);
-  // 選股邏輯：分段式分析（分析摘要 / 分數拆解 / 加分原因 / 扣分原因 / 操作觀點）
+  // 選股邏輯：分段式分析（標的屬性 / 分數拆解 / 目前優勢 / 目前風險 / 操作觀點）
   const selSummary = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p class="sl-meta">標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
-      <div class="sl-seg"><h5>分析摘要</h5><p>${esc(L.analysis)}</p></div>
+      <div class="sl-seg"><h5>標的屬性</h5><p>${esc(L.attr)}</p></div>
       <div class="sl-seg"><h5>分數拆解</h5><div class="score-chips">${scoreChips}</div></div>
-      <div class="sl-seg"><h5>🟢 加分原因</h5><ul>${liArr(L.pass)}</ul></div>
-      <div class="sl-seg"><h5>🔴 扣分 / 風險原因</h5><ul>${liArr(L.risks)}</ul></div>
+      <div class="sl-seg"><h5>🟢 目前優勢（加分原因）</h5><ul>${liArr(L.pass)}</ul></div>
+      <div class="sl-seg"><h5>🔴 目前風險（扣分原因）</h5><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>
       ${noteList.length ? `<div class="sl-seg sl-note-seg"><h5>ℹ️ 資料說明</h5><ul>${liArr(noteList)}</ul></div>` : ""}
       <div class="sl-seg"><h5>操作觀點</h5><p>${esc(L.conclusion)}</p></div>
     </div>`;
@@ -902,7 +904,7 @@ let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setT
 function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGold(); }
 
 /* ---------- Modal 彈窗 ---------- */
-function openModal(id) { const m = $(id); if (!m) return; m.classList.add("open"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("modal-open"); const inp = m.querySelector("input"); if (inp) setTimeout(() => inp.focus(), 70); }
+function openModal(id) { const m = $(id); if (!m) return; document.querySelectorAll(".modal.open").forEach((o) => { if (o !== m) closeModal(o); }); m.classList.add("open"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("modal-open"); const inp = m.querySelector("input"); if (inp) setTimeout(() => inp.focus(), 70); }
 function closeModal(m) { m.classList.remove("open"); m.setAttribute("aria-hidden", "true"); if (!document.querySelector(".modal.open")) document.body.classList.remove("modal-open"); }
 document.querySelectorAll(".modal").forEach((m) => m.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => closeModal(m))));
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".modal.open").forEach(closeModal); });

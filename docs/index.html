@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-017" />
+  <link rel="stylesheet" href="./style.css?v=20260623-018" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -17,13 +17,19 @@
       <p class="tagline">股票 × 黃金 × 技術面 × 籌碼面｜投資決策輔助工具</p>
     </section>
 
-    <!-- 功能入口卡 -->
+    <!-- 上方輔助入口卡：只保留黃金價格 / 新聞搜尋 -->
     <div class="entry-cards">
-      <button class="entry-card" data-act="focus-symbol"><span class="ico">📈</span><b>股票快查</b><small>輸入代號即時分析</small></button>
-      <button class="entry-card" data-act="gold"><span class="ico">🥇</span><b>黃金價格</b><small>國際金價與走勢</small></button>
+      <button class="entry-card" data-act="gold"><span class="ico">🥇</span><b>黃金價格</b><small>國際金價與歷年走勢</small></button>
       <button class="entry-card" data-act="twnews"><span class="ico">📰</span><b>新聞搜尋</b><small>台股 / 美股新聞</small></button>
-      <button class="entry-card" data-act="focus-holdings"><span class="ico">💼</span><b>我的持股</b><small>持股損益診斷</small></button>
     </div>
+
+    <!-- 中央視覺 HUD（純 CSS，僅視覺與狀態提示，不放任何功能） -->
+    <section class="hud" id="hud">
+      <div class="hud-ring"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div></div>
+      <p class="hud-hint">輸入股票代號開始分析</p>
+      <div class="hud-tags"><span>股票分析</span><span>黃金追蹤</span><span>新聞搜尋</span></div>
+      <p class="hud-src">資料來源：FinMind / Gold-API　·　僅供研究，不構成投資建議</p>
+    </section>
 
     <!-- 主功能大卡：股票快查 -->
     <section class="card main-card" id="query">
@@ -55,17 +61,6 @@
       <div class="row"><button id="save" class="ghost">加入持股</button><button id="analyzeAll" class="ghost">持股診斷</button><button id="clearAll" class="ghost danger">清空</button></div>
       <div id="holdings" class="chips"></div>
     </section>
-
-    <section class="card">
-      <h2>📰 新聞搜尋</h2>
-      <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
-    </section>
-
-    <section class="card goldmini">
-      <h2>🥇 黃金現價</h2>
-      <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
-      <button class="ghost" data-act="gold">開啟黃金分析</button>
-    </section>
   </main>
 
   <footer><p>資料來源：FinMind 開放 API、Gold-API.com。以上僅為資料整理與趨勢分析，不構成投資建議。</p></footer>
@@ -77,6 +72,7 @@
       <div class="modal-head"><h3>📰 台股相關新聞搜尋</h3><button class="modal-x" data-close aria-label="關閉">✕</button></div>
       <div class="modal-body">
         <p class="panel-sub">輸入台股代號，查詢個股新聞、財報、法人與市場消息（外部搜尋，新分頁開啟）。</p>
+        <div class="row news-switch"><button class="ghost" data-act="usnews">🗞️ 改搜美股新聞 →</button></div>
         <div class="row"><input id="tw-news-sym" type="text" placeholder="台股代號（4~6 位數字，例 2330、2454、2317）" maxlength="6" autocomplete="off" /></div>
         <div class="row newsbtns">
           <button class="ghost" data-news="tw" data-kind="news">搜尋台股新聞</button>
@@ -95,6 +91,7 @@
       <div class="modal-head"><h3>🗞️ 美股相關新聞搜尋</h3><button class="modal-x" data-close aria-label="關閉">✕</button></div>
       <div class="modal-body">
         <p class="panel-sub">輸入美股代號，查詢公司新聞、財報、財測與分析師消息（外部搜尋，新分頁開啟）。</p>
+        <div class="row news-switch"><button class="ghost" data-act="twnews">📰 改搜台股新聞 →</button></div>
         <div class="row"><input id="us-news-sym" type="text" placeholder="美股代號（例 AAPL、NVDA、MSFT、BRK.B）" maxlength="10" autocomplete="off" /></div>
         <div class="row newsbtns">
           <button class="ghost" data-news="us" data-kind="news">搜尋美股新聞</button>
@@ -115,6 +112,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-017"></script>
+  <script src="./app.js?v=20260623-018"></script>
 </body>
 </html>
