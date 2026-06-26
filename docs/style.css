@@ -79,14 +79,20 @@ input, select { font-size: 15px; padding: 12px 13px; border-radius: 11px; border
 input { flex: 1; min-width: 130px; } select { min-width: 96px; }
 input::placeholder { color: #56708c; }
 input:focus, select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan), 0 0 16px rgba(0, 200, 255, .25); }
-button { cursor: pointer; font-size: 15px; padding: 12px 18px; border-radius: 11px; border: 1px solid var(--line2); font-weight: 700;
-  background: linear-gradient(180deg, rgba(0, 160, 220, .22), rgba(0, 120, 200, .12)); color: #d6f4ff; transition: box-shadow .14s, border-color .14s, transform .1s; }
-button:hover { border-color: var(--cyan); box-shadow: 0 0 18px rgba(0, 200, 255, .4); }
-button:active { transform: scale(.98); }
-button.primary-lg { width: 100%; padding: 13px; font-size: 1rem; color: #021018; border: none;
-  background: linear-gradient(180deg, #4fe3ff, #1aa8e6); box-shadow: 0 6px 24px rgba(0, 200, 255, .35); }
-button.ghost { background: transparent; color: var(--fg); }
-button.danger { color: var(--dn); border-color: rgba(255, 80, 100, .4); }
+/* 統一按鈕：深色背景 + cyan 描邊（無大面積亮藍實心） */
+button { cursor: pointer; font-size: 15px; min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid rgba(0, 220, 255, .55); font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(4, 18, 32, .72); color: #dff7ff; box-shadow: inset 0 0 18px rgba(0, 220, 255, .06);
+  transition: box-shadow .14s, border-color .14s, background .14s, transform .1s; }
+button:hover { background: rgba(0, 220, 255, .10); border-color: rgba(0, 235, 255, .85); box-shadow: 0 0 16px rgba(0, 220, 255, .22); }
+button:active { transform: scale(.98); filter: brightness(1.1); }
+/* 主要 CTA：同描邊風格，僅以略深 cyan 底微微強調，不是亮藍實心 */
+button.primary-lg { font-size: 1rem; color: #eaffff; border-color: rgba(0, 235, 255, .8); background: rgba(0, 220, 255, .12); box-shadow: inset 0 0 20px rgba(0, 220, 255, .12); }
+button.primary-lg:hover { background: rgba(0, 220, 255, .2); box-shadow: 0 0 18px rgba(0, 220, 255, .32); }
+button.ghost { background: rgba(4, 18, 32, .55); }
+/* 危險操作（清空）：紅色描邊、非實心紅、同高度 */
+button.danger { color: #ff6b7a; border-color: rgba(255, 80, 110, .65); background: rgba(28, 8, 16, .45); box-shadow: inset 0 0 18px rgba(255, 80, 110, .05); }
+button.danger:hover { background: rgba(255, 80, 110, .12); border-color: rgba(255, 100, 120, .9); box-shadow: 0 0 14px rgba(255, 80, 110, .2); }
 .status-line { margin-top: 8px; color: var(--muted); font-size: .88rem; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
 .chip { background: rgba(4, 12, 22, .8); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: .9rem; }
@@ -165,7 +171,7 @@ button.danger { color: var(--dn); border-color: rgba(255, 80, 100, .4); }
 /* K 線 */
 .kline-wrap { border: 1px solid var(--line); box-shadow: inset 0 0 30px rgba(0, 160, 255, .05), var(--glow); }
 .kline-wrap .kl-tools { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-.kl-tools button { padding: 7px 11px; font-size: .82rem; font-weight: 600; }
+.kl-tools button { min-height: 34px; padding: 6px 12px; font-size: .82rem; font-weight: 600; }
 .kl-range { color: var(--cyan); font-size: .82rem; margin-left: auto; }
 canvas.kline { width: 100%; height: 340px; display: block; background: radial-gradient(120% 80% at 50% 0%, rgba(0, 90, 140, .12), transparent 60%), #040a13; border: 1px solid var(--line); border-radius: 12px; touch-action: none; }
 .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: .8rem; color: var(--muted); }
@@ -204,7 +210,7 @@ body.modal-open { overflow: hidden; }
 .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(0, 160, 255, .08), transparent); }
 .modal-head h3 { margin: 0; font-size: 1.16rem; color: #eaf6ff; }
-.modal-x { background: transparent; border: 1px solid var(--line); color: var(--fg); border-radius: 9px; padding: 6px 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+.modal-x { background: transparent; border: 1px solid var(--line); color: var(--fg); border-radius: 9px; min-height: 36px; padding: 4px 12px; font-size: 1rem; font-weight: 700; cursor: pointer; }
 .modal-x:hover { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0, 200, 255, .35); }
 .modal-body { padding: 18px 20px; overflow-y: auto; }
 .modal-body .block:first-child, .modal-body .gold-result > :first-child { margin-top: 0; }
@@ -264,8 +270,19 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 /* 卡片單欄堆疊 */
 .shell > .card { margin: 16px 0; }
 .main-card { border-color: var(--line2); box-shadow: 0 0 28px rgba(0, 180, 255, .12); }
-/* 開始分析按鈕：桌機不滿版、不過粗 */
-#go.primary-lg { width: auto; max-width: 300px; min-height: 46px; padding: 0 30px; margin-top: 12px; }
+/* 股票快查 + 我的持股 同一列（桌機 1fr 1fr） */
+.tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin: 16px 0; }
+.tool-row .card { margin: 0; }
+
+/* 開始分析按鈕：桌機不滿版、不過粗；強制深色 cyan 描邊（覆蓋任何亮藍實心） */
+#go, button#go, button.primary-lg#go {
+  width: auto; max-width: 220px; min-height: 44px; height: 46px; padding: 0 24px; margin-top: 12px; border-radius: 12px;
+  background: rgba(4, 18, 32, .72) !important; background-image: none !important;
+  border: 1px solid rgba(0, 220, 255, .55) !important; color: #dff7ff !important;
+  box-shadow: inset 0 0 18px rgba(0, 220, 255, .06) !important; }
+#go:hover, button#go:hover, button.primary-lg#go:hover {
+  background: rgba(0, 220, 255, .10) !important; background-image: none !important;
+  border-color: rgba(0, 235, 255, .85) !important; box-shadow: 0 0 16px rgba(0, 220, 255, .22) !important; }
 /* 新聞 modal 市場切換 */
 .news-switch { margin-bottom: 4px; } .news-switch button { width: auto; padding: 8px 14px; font-size: .9rem; }
 .query-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
@@ -353,8 +370,12 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .entry-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: none; }
   /* HUD 手機版縮小 */
   .hud { padding: 18px 14px; gap: 12px; } .hud-ring { width: 120px; height: 120px; } .hud-hint { font-size: .95rem; }
-  /* 開始分析按鈕：手機滿版好點 */
-  #go.primary-lg { width: 100%; max-width: none; }
+  /* 股票快查 + 我的持股 改單欄，且我的持股排在股票快查上方 */
+  .tool-row { display: flex; flex-direction: column; gap: 16px; }
+  .tool-row .card { width: 100%; }
+  #myholdings { order: 1; } #query { order: 2; }
+  /* 開始分析按鈕：手機滿版好點（仍深色描邊，非亮藍實心） */
+  #go, button#go, button.primary-lg#go { width: 100%; max-width: none; min-height: 46px; background: rgba(4, 18, 32, .72) !important; background-image: none !important; }
   /* 所有主卡片一律滿版、寬度一致 */
   .card, .result, .result .block, .quote-hero, .decision, .selection { width: 100%; max-width: 100%; box-sizing: border-box; }
   .shell > .card, .result .block { padding: 14px; border-radius: 16px; margin: 14px 0; }

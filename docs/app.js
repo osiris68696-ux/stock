@@ -8,6 +8,34 @@ const LS_KEY = "twus_holdings";
 const FINMIND = "https://api.finmindtrade.com/api/v4/data";   // 唯一允許的資料網域
 const TW_RE = /^[0-9]{4,6}$/;
 const US_RE = /^[A-Za-z]{1,10}$/;
+
+// 前端股票名稱對照（純前端，無後端查詢）。key 一律小寫；中文小寫等同原字。
+const SYMBOL_ALIASES = {
+  "台積電": { market: "TW", symbol: "2330" }, "台積": { market: "TW", symbol: "2330" }, "tsmc": { market: "TW", symbol: "2330" },
+  "鴻海": { market: "TW", symbol: "2317" }, "foxconn": { market: "TW", symbol: "2317" },
+  "聯發科": { market: "TW", symbol: "2454" }, "mediatek": { market: "TW", symbol: "2454" },
+  "台新新光金": { market: "TW", symbol: "2887" }, "台新金": { market: "TW", symbol: "2887" }, "新光金": { market: "TW", symbol: "2887" },
+  "輝達": { market: "US", symbol: "NVDA" }, "nvidia": { market: "US", symbol: "NVDA" }, "nvda": { market: "US", symbol: "NVDA" },
+  "蘋果": { market: "US", symbol: "AAPL" }, "apple": { market: "US", symbol: "AAPL" }, "aapl": { market: "US", symbol: "AAPL" },
+  "微軟": { market: "US", symbol: "MSFT" }, "microsoft": { market: "US", symbol: "MSFT" }, "msft": { market: "US", symbol: "MSFT" },
+  "qqq": { market: "US", symbol: "QQQ" },
+  "特斯拉": { market: "US", symbol: "TSLA" }, "tesla": { market: "US", symbol: "TSLA" }, "tsla": { market: "US", symbol: "TSLA" },
+  "谷歌": { market: "US", symbol: "GOOGL" }, "google": { market: "US", symbol: "GOOGL" }, "alphabet": { market: "US", symbol: "GOOGL" }, "googl": { market: "US", symbol: "GOOGL" },
+  "臉書": { market: "US", symbol: "META" }, "meta": { market: "US", symbol: "META" },
+  "亞馬遜": { market: "US", symbol: "AMZN" }, "amazon": { market: "US", symbol: "AMZN" }, "amzn": { market: "US", symbol: "AMZN" },
+  "amd": { market: "US", symbol: "AMD" }, "超微": { market: "US", symbol: "AMD" },
+};
+// 解析輸入：trim → alias → 代號格式 → 中文/未知名稱提示。回傳 {market,symbol,switched} 或 {error}
+function resolveSymbolInput(raw) {
+  const t = String(raw || "").trim();
+  if (!t) return { error: "請輸入股票代號或名稱。" };
+  const hit = SYMBOL_ALIASES[t.toLowerCase()];
+  if (hit) return { market: hit.market, symbol: hit.symbol, switched: true };
+  if (TW_RE.test(t)) return { market: "TW", symbol: t };
+  if (US_RE.test(t)) return { market: "US", symbol: t.toUpperCase() };
+  if (/[一-鿿]/.test(t)) return { error: "目前純前端版尚未支援完整中文名稱搜尋，請輸入股票代號，或使用已建立的常用名稱。" };
+  return { error: "目前尚未建立此名稱對照，請輸入股票代號，例如 TSLA。" };
+}
 const US_NEWS_RE = /^[A-Za-z][A-Za-z.\-]{0,9}$/;   // 美股新聞搜尋（可含 . 或 -，如 BRK.B）
 const PRICE_TYPE = "最新收盤價（FinMind 日線資料，非即時逐筆報價）";
 const $ = (id) => document.getElementById(id);
@@ -945,9 +973,25 @@ document.querySelectorAll("[data-news]").forEach((btn) => btn.addEventListener("
     else openSearch("https://finance.yahoo.com/quote/" + encodeURIComponent(s));
   }
 }));
-$("go").addEventListener("click", () => { const s = $("symbol").value.trim(); if (s) analyze(s, $("market").value); });
+$("go").addEventListener("click", () => {
+  const r = resolveSymbolInput($("symbol").value);
+  if (r.error) { toast(r.error); return; }
+  if (r.market !== $("market").value) { $("market").value = r.market; toast(`已辨識為${r.market === "US" ? "美股" : "台股"} ${r.symbol}`); }
+  $("symbol").value = r.symbol;
+  analyze(r.symbol, r.market);
+});
 $("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
-$("save").addEventListener("click", () => { const s = $("h-symbol").value.trim().toUpperCase(); if (!s) return; const m = $("h-market").value, cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null; const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m)); list.push({ symbol: s, market: m, cost, qty }); setHoldings(list); });
+$("save").addEventListener("click", () => {
+  const r = resolveSymbolInput($("h-symbol").value);
+  if (r.error) { toast(r.error); return; }
+  const m = r.market, s = r.symbol;          // 存入實際代號，不存中文名稱
+  if (m !== $("h-market").value) $("h-market").value = m;
+  $("h-symbol").value = s;
+  const cost = parseFloat($("cost").value) || null, qty = parseFloat($("qty").value) || null;
+  const list = getHoldings().filter((h) => !(h.symbol === s && h.market === m));
+  list.push({ symbol: s, market: m, cost, qty });
+  setHoldings(list);
+});
 $("h-symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("save").click(); });
 $("holdings").addEventListener("click", (e) => { const del = e.target.getAttribute("data-del"); if (del) { const [m, s] = del.split(":"); setHoldings(getHoldings().filter((h) => !(h.market === m && h.symbol === s))); return; } const a = e.target.closest("a"); if (a) { e.preventDefault(); const m = a.getAttribute("data-m"), s = a.getAttribute("data-s"); const h = getHoldings().find((x) => x.market === m && x.symbol === s) || {}; analyze(s, m, h.cost, h.qty); } });
 $("analyzeAll").addEventListener("click", () => { const list = getHoldings(); if (!list.length) { toast("尚未加入持股，請先在上方加入持股。"); return; } list.forEach((h) => analyze(h.symbol, h.market, h.cost, h.qty)); });
