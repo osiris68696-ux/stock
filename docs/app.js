@@ -542,75 +542,88 @@ function holdingPnl(price, cost, qty) {
 /* ---------- 浮動股價：自動更新（全域單一 timer，單一結果模型） ---------- */
 let GTIMER = null, CUR = null, SEQ = 0;
 function stopAuto() { if (GTIMER) { clearInterval(GTIMER); GTIMER = null; } }
-function setGlobalAuto(ms) { stopAuto(); if (ms > 0) GTIMER = setInterval(() => { if (!CUR || !$("result").querySelector(".result")) { stopAuto(); return; } refreshCurrent(SEQ, false); }, ms); }
+function setGlobalAuto(ms) { stopAuto(); if (ms > 0) GTIMER = setInterval(() => { if (!CUR || !$("centerResult").querySelector(".result")) { stopAuto(); return; } refreshCurrent(SEQ, false); }, ms); }
 window.addEventListener("beforeunload", stopAuto);
 
 /* ---------- 主流程：單一最新結果，分流到 中央 / 右側 / 底部 三欄 ---------- */
 function clearResult(loadingMsg) {
   stopAuto();
-  const hub = $("centerHub"); if (hub) hub.style.display = "none";
-  $("result").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
+  $("centerResult").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
+  $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
 }
 // 手機版（≤720px）預設收合基本面 / 技術面 / 籌碼面 / 資料來源；桌機展開
 function syncAccordion() {
   const mob = window.matchMedia("(max-width: 720px)").matches;
-  document.querySelectorAll("#result .info-section").forEach((d) => {
+  document.querySelectorAll("#rightResult .info-section").forEach((d) => {
     if (mob) d.removeAttribute("open"); else d.setAttribute("open", "");
   });
 }
-// HUD / 狀態面板：ready（查詢前）/ loading（查詢中）/ done（完成隱藏）
+// HUD 狀態機：ready（查詢前）/ loading（查詢中）/ done（完成）/ error（失敗）/ hide（隱藏）
+let HUD_T0 = 0;
+function symDisplay(market, symbol) { return `${market === "US" ? "美股" : "台股"} ${symbol}`; }
 function setHudState(state, sym) {
-  ["hudDesktop", "hudMobile"].forEach((id) => {
-    const h = $(id); if (!h) return;
-    if (state === "done") { h.style.display = "none"; return; }
-    h.style.display = "";                                  // 交還 CSS（媒體查詢決定桌機/手機誰顯示）
-    h.classList.toggle("is-loading", state === "loading");
-    if (sym != null) { const s = h.querySelector(".hud-sym"); if (s) s.textContent = sym; }
-  });
+  const h = $("hud"); if (!h) return;
+  if (state === "hide") { h.classList.add("is-hidden"); return; }
+  h.classList.remove("is-hidden", "is-loading", "is-done", "is-error");
+  if (state === "loading") h.classList.add("is-loading");
+  else if (state === "done") h.classList.add("is-done");
+  else if (state === "error") h.classList.add("is-error");
+  // state "ready" → 不加 class
+  if (sym != null) h.querySelectorAll(".hud-sym").forEach((s) => { s.textContent = sym; });
+}
+// 查詢完成：loading 至少停留 400ms → 顯示「分析完成」→ 600ms 後淡出，讓結果成為主畫面
+function finishHud(symbol, market) {
+  const wait = Math.max(0, 400 - (Date.now() - HUD_T0));
+  setTimeout(() => {
+    if (!CUR || CUR.symbol !== symbol) { setHudState("hide"); return; }   // 已被新查詢取代
+    setHudState("done", symDisplay(market, symbol));
+    setTimeout(() => { if (CUR && CUR.symbol === symbol) setHudState("hide"); }, 600);
+  }, wait);
 }
 async function analyze(symbol, market, cost, qty) {
   symbol = String(symbol || "").trim().toUpperCase();
   const seq = ++SEQ; stopAuto();
-  if (market === "TW" && !TW_RE.test(symbol)) { clearResult(); $("result").innerHTML = `<div class="result"><div class="err">⚠️ 台股代號格式不正確（例 2330）</div></div>`; return; }
-  if (market === "US" && !US_RE.test(symbol)) { clearResult(); $("result").innerHTML = `<div class="result"><div class="err">⚠️ 美股代號格式不正確（例 AAPL）</div></div>`; return; }
+  if (market === "TW" && !TW_RE.test(symbol)) { clearResult(); setHudState("hide"); $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ 台股代號格式不正確（例 2330）</div></div>`; return; }
+  if (market === "US" && !US_RE.test(symbol)) { clearResult(); setHudState("hide"); $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ 美股代號格式不正確（例 AAPL）</div></div>`; return; }
   CUR = { symbol, market, cost: parseFloat(cost) || null, qty: parseFloat(qty) || null, autoVal: "off", lastClose: null };
-  setHudState("loading", `${market === "US" ? "美股" : "台股"} ${symbol}`);   // 查詢中狀態（不直接消失）
+  HUD_T0 = Date.now();
+  setHudState("loading", symDisplay(market, symbol));                         // 查詢中狀態（不直接消失）
   clearResult();                                                              // 載入提示改由 HUD 顯示
   await refreshCurrent(seq, true);
 }
 async function refreshCurrent(seq, isFirst) {
   if (seq == null) seq = SEQ;
   const p = CUR; if (!p) return;
-  const st = $("result").querySelector(".upd-status"); if (st) st.textContent = "更新中…";
+  const st = $("centerResult").querySelector(".upd-status"); if (st) st.textContent = "更新中…";
   try {
     const a = p.market === "TW" ? await analyzeTW(p.symbol) : await analyzeUS(p.symbol);
     if (seq !== SEQ) return;                       // 已被新查詢取代 → 丟棄（避免持股診斷競態）
     a.decision = decide(a.ind, a.fund, a.market);
     a.holding = holdingPnl(a.ind.close, p.cost, p.qty);
     let initView = null;
-    const oldCv = $("result").querySelector("canvas.kline");
+    const oldCv = $("centerResult").querySelector("canvas.kline");
     if (oldCv && oldCv._view) initView = { count: oldCv._view.count, endOffset: oldCv._barsLen - oldCv._view.end };
     const prevClose = p.lastClose;
     const R = renderResult(a, { updatedAt: nowStamp(), autoVal: p.autoVal });
-    $("result").innerHTML = R;
+    $("centerResult").innerHTML = R.center; $("rightResult").innerHTML = R.right; $("bottomResult").innerHTML = R.bottom;
     p.lastClose = a.ind.close;
-    const wrap = $("result").querySelector(".kline-wrap");
+    const wrap = $("centerResult").querySelector(".kline-wrap");
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
     setupCurControls();
     syncAccordion();
-    setHudState("done");                                  // 查詢完成 → 隱藏 HUD，不擠壓結果
+    if (isFirst) finishHud(p.symbol, p.market); else setHudState("hide");   // 完成：done→淡出；自動更新不再顯示 HUD
     if (!isFirst && prevClose != null && a.ind.close != null && a.ind.close !== prevClose) flashCur(a.ind.close > prevClose);
   } catch (e) {
     if (seq !== SEQ) return;
-    const msg = e.message === "EMPTY" ? "查無最新股價資料，請確認股票代號或稍後再試。" : (isFirst ? "資料更新失敗，請稍後重試。" : "更新失敗，請稍後再試。");
-    if (isFirst) { setHudState("done"); $("result").innerHTML = `<div class="result"><div class="err">⚠️ ${esc(msg)}</div></div>`; }
-    else { const st2 = $("result").querySelector(".upd-status"); if (st2) { st2.textContent = msg; st2.classList.add("upd-err"); } }
+    const msg = e.message === "EMPTY" ? "查無最新股價資料，請確認股票代號或稍後再試。" : "查詢失敗，請確認代號或稍後再試。";
+    if (isFirst) { setHudState("error", symDisplay(p.market, p.symbol)); $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ ${esc(msg)}</div></div>`; setTimeout(() => { if (CUR && CUR.symbol === p.symbol) setHudState("hide"); }, 1600); }
+    else { const st2 = $("centerResult").querySelector(".upd-status"); if (st2) { st2.textContent = msg; st2.classList.add("upd-err"); } }
   }
 }
-function flashCur(up) { const px = $("result").querySelector(".px"); if (!px) return; px.classList.remove("flash-up", "flash-down"); void px.offsetWidth; px.classList.add(up ? "flash-up" : "flash-down"); setTimeout(() => px.classList.remove("flash-up", "flash-down"), 800); }
+function flashCur(up) { const px = $("centerResult").querySelector(".px"); if (!px) return; px.classList.remove("flash-up", "flash-down"); void px.offsetWidth; px.classList.add(up ? "flash-up" : "flash-down"); setTimeout(() => px.classList.remove("flash-up", "flash-down"), 800); }
 function setupCurControls() {
-  const btn = $("result").querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => refreshCurrent(SEQ, false));
-  const sel = $("result").querySelector(".upd-auto");
+  const btn = $("centerResult").querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => refreshCurrent(SEQ, false));
+  const sel = $("centerResult").querySelector(".upd-auto");
   if (sel && CUR) { sel.value = CUR.autoVal; sel.addEventListener("change", () => { CUR.autoVal = sel.value; setGlobalAuto({ off: 0, "30": 30000, "60": 60000, "300": 300000 }[sel.value] || 0); }); }
 }
 
@@ -665,15 +678,12 @@ function renderResult(a, meta) {
     ? scoreChip("技術面", L.sub.tech, L.sub.techMax) + scoreChip("價格位置", L.sub.pos, L.sub.posMax) + scoreChip("風險控制", L.sub.risk, L.sub.riskMax)
     : scoreChip("基本面", L.sub.fund, L.sub.fundMax) + scoreChip("技術面", L.sub.tech, L.sub.techMax) + scoreChip("籌碼面", L.sub.chip, L.sub.chipMax) + scoreChip("風險控制", L.sub.risk, L.sub.riskMax);
   const noteList = L.missing.concat(L.dataNotes);
-  // 選股邏輯：分段式分析（標的屬性 / 分數拆解 / 目前優勢 / 目前風險 / 操作觀點）
+  // 選股邏輯（中央）：分段式分析（標的屬性 / 分數拆解 / 操作觀點）；加分 / 扣分 放底部卡
   const selSummary = `<div class="block selection">
       <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
       <p class="sl-meta">標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
       <div class="sl-seg"><h5>標的屬性</h5><p>${esc(L.attr)}</p></div>
       <div class="sl-seg"><h5>分數拆解</h5><div class="score-chips">${scoreChips}</div></div>
-      <div class="sl-seg"><h5>🟢 目前優勢（加分原因）</h5><ul>${liArr(L.pass)}</ul></div>
-      <div class="sl-seg"><h5>🔴 目前風險（扣分原因）</h5><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>
-      ${noteList.length ? `<div class="sl-seg sl-note-seg"><h5>ℹ️ 資料說明</h5><ul>${liArr(noteList)}</ul></div>` : ""}
       <div class="sl-seg"><h5>操作觀點</h5><p>${esc(L.conclusion)}</p></div>
     </div>`;
 
@@ -722,9 +732,15 @@ function renderResult(a, meta) {
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></details>`;
 
-  // AI-900 中央版心：單欄結果流，依序往下排（不分左中右欄）
-  const flow = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}${zones}${fundamental}${technical}${chip}${source}${concl}<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
-  return flow;
+  // 加分 / 扣分 / 資料說明 → 底部卡（看盤大屏底部橫向）
+  const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
+    + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>`
+    + (noteList.length ? `<div class="block sl-info"><h4>ℹ️ 資料說明</h4><ul>${liArr(noteList)}</ul></div>` : "");
+  // 桌機看盤大屏三欄分流：中央=報價/決策/K線/選股/結論；右側=基本/技/籌/資料來源；底部=支持/風險/價格
+  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}${concl}</div>`;
+  const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}</div>`;
+  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${reasonsBottom}${zones}</div><p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
+  return { center, right, bottom };
 }
 
 /* ===================== 黃金價格分析 ===================== */

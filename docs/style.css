@@ -20,13 +20,13 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -2; pointer-even
 body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
   background: repeating-linear-gradient(180deg, rgba(0, 220, 255, .016) 0 2px, transparent 2px 5px); }
 
-.shell { max-width: 960px; width: 100%; margin: 0 auto; padding: 18px 20px 64px; }
+.shell { max-width: none; width: 100%; margin: 0; padding: 0 0 28px; }
 h1, h2, h3, h4 { letter-spacing: .4px; }
 
 /* 頂部 */
 .appbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(7, 16, 28, .82), rgba(7, 16, 28, .55)); backdrop-filter: blur(10px); box-shadow: 0 1px 18px rgba(0, 180, 255, .1); }
-.appbar-inner { max-width: 960px; width: 100%; margin: 0 auto; padding: 11px 20px; display: flex; align-items: center; gap: 12px; }
+.appbar-inner { max-width: none; width: 100%; margin: 0; padding: 11px 24px; display: flex; align-items: center; gap: 12px; }
 .brand { font-weight: 800; font-size: 1.04rem; color: #eaf6ff; text-shadow: 0 0 14px rgba(0, 200, 255, .5); }
 .appbar-status { display: none; }
 
@@ -239,83 +239,93 @@ html, body { max-width: 100%; overflow-x: hidden; }
 body { -webkit-user-select: none; -ms-user-select: none; user-select: none; }
 input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user-select: text; user-select: text; }
 
-/* ===== AI-900 中央版心：單欄工具型版面（Hero 沿用上方 .hero 樣式） ===== */
-/* 上方輔助入口卡（黃金 / 新聞，與下方卡片同寬、平均兩欄） */
-.entry-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; width: 100%; margin: 16px 0 4px; }
-.entry-card { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; min-height: 104px; padding: 20px; justify-content: center; color: var(--fg);
-  background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--glow);
-  transition: transform .15s, border-color .15s, box-shadow .15s; }
-.entry-card:hover { transform: translateY(-4px); border-color: var(--line2); box-shadow: 0 14px 40px rgba(0, 190, 255, .26); }
-.entry-card .ico { font-size: 1.7rem; filter: drop-shadow(0 0 10px rgba(0, 200, 255, .5)); }
-.entry-card b { font-size: 1rem; color: #eaf6ff; } .entry-card small { color: var(--muted); font-size: .76rem; }
+/* ===== 桌機看盤大屏：滿版三欄 grid（title / 左 中 右 / bottom） ===== */
+.dashboard-shell { width: 100%; display: grid; gap: 16px; padding: 16px 22px 24px; align-items: start;
+  grid-template-columns: minmax(280px, 18vw) minmax(640px, 1fr) minmax(280px, 18vw);
+  grid-template-areas: "title title title" "left center right" "bottom bottom bottom"; }
+.top-title { grid-area: title; text-align: center; }
+.left-panel { grid-area: left; } .center-panel { grid-area: center; } .right-panel { grid-area: right; } .bottom-panel { grid-area: bottom; }
+.side-panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.side-panel .card { margin: 0; padding: 14px; } .side-panel .card h2 { font-size: 1.04rem; }
+.center-panel { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.center-panel canvas.kline { height: 460px; }
+.center-panel .kline-wrap, .center-panel canvas.kline { width: 100%; max-width: none; }
+/* 結果包裝層透明，讓內部 block / hero 成為一張張卡片（看盤大屏感）*/
+.center-panel .result, .side-result, .bottom-result { background: transparent; border: none; box-shadow: none; padding: 0; margin: 0; }
+.center-panel .result > .block, .center-panel .result > .quote-hero { margin: 0; }
+.center-panel .result { display: flex; flex-direction: column; gap: 14px; }
+.side-result .block { margin: 0 0 14px; }
+.bottom-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.bottom-cards .block { margin: 0; } .bottom-result .disc { margin-top: 12px; text-align: center; }
 
-/* 中央視覺 HUD（純 CSS，無功能；與主功能卡同寬） */
-.hud { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; width: 100%; margin: 16px 0 6px; padding: 26px 16px;
-  border: 1px solid var(--line); border-radius: 20px; background: radial-gradient(120% 90% at 50% 20%, rgba(0, 90, 150, .16), transparent 60%), linear-gradient(180deg, var(--panel-a), var(--panel-b)); box-shadow: var(--glow); }
-.hud-ring { width: 150px; height: 150px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;
-  box-shadow: inset 0 0 28px rgba(0, 180, 255, .14), 0 0 28px rgba(0, 180, 255, .12); }
+@media (min-width: 1600px) {
+  .dashboard-shell { grid-template-columns: 330px minmax(0, 1fr) 330px; padding: 18px 30px 28px; }
+  .center-panel canvas.kline { height: 520px; }
+}
+
+/* 科技標題框 */
+.titlebox { display: flex; align-items: center; gap: 14px; }
+.tb-line { flex: 1 1 auto; height: 2px; position: relative; background: linear-gradient(90deg, transparent, var(--line2)); }
+.tb-line-r { background: linear-gradient(90deg, var(--line2), transparent); }
+.tb-line::after { content: ""; position: absolute; top: -4px; width: 9px; height: 9px; transform: rotate(45deg); background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+.tb-line-l::after { right: 0; } .tb-line-r::after { left: 0; }
+.tb-mid { flex: 0 0 auto; text-align: center; padding: 8px 30px; position: relative;
+  background: linear-gradient(180deg, rgba(0, 160, 255, .12), rgba(0, 70, 140, .04)); border: 1px solid var(--line2);
+  box-shadow: 0 0 26px rgba(0, 180, 255, .18), inset 0 0 22px rgba(0, 160, 255, .08);
+  clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 20px 100%, 0 50%); }
+.tb-mid h1 { margin: 0; font-size: 1.6rem; font-weight: 800; background: linear-gradient(92deg, #eaf9ff, #6fd6ff 55%, #b9a6ff); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 24px rgba(0, 190, 255, .22); }
+.tb-sub { margin: 2px 0 0; font-size: .64rem; letter-spacing: 4px; color: var(--cyan); }
+.tagline { text-align: center; color: #8fb6d6; margin: 8px 0 0; font-size: .95rem; letter-spacing: 1px; }
+
+/* 左 / 右欄卡片內小元件 */
+.statmini .stat-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0, 220, 255, .08); font-size: .85rem; }
+.statmini .stat-row:last-child { border-bottom: none; } .statmini .stat-row span { color: var(--muted); } .statmini .stat-row b { color: #cfe6f7; }
+.goldmini .gm-price { font-size: 1.6rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 14px rgba(255, 200, 80, .4); font-variant-numeric: tabular-nums; }
+.goldmini .gm-sub { color: var(--muted); font-size: .8rem; } .goldmini #goldMiniBody { margin-bottom: 10px; }
+.radar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.radar-cell { display: block; text-align: center; cursor: pointer; padding: 12px 4px; border-radius: 12px; color: var(--fg); background: rgba(3, 10, 20, .55); border: 1px solid var(--line); transition: border-color .14s, box-shadow .14s, transform .12s; }
+.radar-cell:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgba(0, 200, 255, .3); transform: translateY(-2px); }
+.radar-cell b { display: block; font-size: .95rem; color: #eaf6ff; } .radar-cell small { color: var(--up); font-size: .74rem; }
+.riskcard ul { margin: 0; padding-left: 18px; } .riskcard li { margin: 5px 0; font-size: .82rem; color: #bcd3e6; line-height: 1.5; }
+
+/* 股票快查：台股 / 美股 兩列（窄左欄：input 上、查詢按鈕下） */
+.stock-search-grid { display: grid; gap: 14px; }
+.stock-search-line { display: grid; gap: 8px; }
+.stock-search-line .field { margin: 0; }
+.stock-search-line button { width: 100%; }
+.news-switch { margin-bottom: 4px; } .news-switch button { width: auto; padding: 8px 14px; font-size: .9rem; }
+
+/* ===== HUD 查詢狀態面板（桌機大型；圓環在左、狀態在右） ===== */
+.hud { display: flex; align-items: center; gap: 24px; text-align: left; padding: 22px; border: 1px solid var(--line); border-radius: 18px;
+  background: radial-gradient(120% 90% at 28% 18%, rgba(0, 90, 150, .16), transparent 60%), linear-gradient(180deg, var(--panel-a), var(--panel-b)); box-shadow: var(--glow); }
+.hud.is-hidden { display: none; }
+.hud-ring { width: 128px; height: 128px; flex: 0 0 auto; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 28px rgba(0, 180, 255, .14), 0 0 28px rgba(0, 180, 255, .12); }
 .hud-ring::before { content: ""; position: absolute; inset: -2px; border-radius: 50%;
   background: conic-gradient(from 0deg, transparent, var(--cyan), transparent 40%, transparent 62%, var(--purple), transparent);
-  -webkit-mask: radial-gradient(circle, transparent 64%, #000 66%); mask: radial-gradient(circle, transparent 64%, #000 66%); animation: spin 9s linear infinite; }
-.hud-ring::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(0, 200, 255, .25); }
+  -webkit-mask: radial-gradient(circle, transparent 64%, #000 66%); mask: radial-gradient(circle, transparent 64%, #000 66%); }
+.hud-ring::after { content: ""; position: absolute; inset: 13px; border-radius: 50%; border: 1px dashed rgba(0, 200, 255, .25); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .hud-core { position: relative; z-index: 1; text-align: center; line-height: 1.2; }
-.hud-core b { display: block; font-size: 1rem; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
-.hud-core span { font-size: .62rem; letter-spacing: 3px; color: var(--muted); }
-.hud-hint { margin: 0; color: #cfe6f7; font-size: 1rem; letter-spacing: .5px; }
-.hud-src { margin: 0; color: var(--muted); font-size: .76rem; }
-
-/* 桌機大型 HUD：圓環在左、狀態內容在右（有實際用途） */
-.hud-desktop { flex-direction: row; align-items: center; text-align: left; gap: 26px; }
-.hud-desktop .hud-ring { flex: 0 0 auto; }
-.hud-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.hud-title { margin: 0; font-size: 1.3rem; color: #eaf6ff; }
-.hud-tips { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: .9rem; line-height: 1.7; }
-.hud-tips li { margin: 2px 0; }
-.hud-stat { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.hud-core b { display: block; font-size: .95rem; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
+.hud-core span { font-size: .6rem; letter-spacing: 3px; color: var(--muted); }
+.hud-check { display: none; position: relative; z-index: 1; font-size: 2.4rem; color: var(--up); text-shadow: 0 0 16px rgba(46, 230, 166, .6); }
+.hud-main { flex: 1 1 auto; min-width: 0; }
+.hud-title { margin: 0 0 6px; font-size: 1.3rem; color: #eaf6ff; }
+.hud-hint { margin: 0; color: #cfe6f7; } .hud-sub { margin: 6px 0 0; color: #cfe0ee; } .hud-sym { color: var(--cyan); }
+.hud-stat { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .hud-stat span { font-size: .78rem; color: var(--up); padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: rgba(3, 14, 26, .5); }
-.hud-steps { margin: 6px 0 2px; padding-left: 20px; color: #cfe0ee; font-size: .92rem; line-height: 1.8; }
-.hud-sym { color: var(--cyan); }
-
-/* 查詢中狀態切換：預設顯示 ready，加 .is-loading 改顯示 loading */
-.hud-loading { display: none; }
-.hud.is-loading .hud-ready, .hud-mobile.is-loading .hud-ready { display: none; }
-.hud.is-loading .hud-loading, .hud-mobile.is-loading .hud-loading { display: block; }
-
-/* 手機精簡提示卡（桌機隱藏） */
-.hud-mobile { display: none; margin: 14px 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px;
-  background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); box-shadow: var(--glow); }
-.hud-mobile .hud-title { font-size: 1.1rem; margin: 0 0 4px; }
-.hud-mobile p { margin: 2px 0; font-size: .9rem; color: #cfe0ee; line-height: 1.6; }
-.hud-mobile .hud-eg { color: var(--muted); }
-.hud-mobile .hud-src { margin-top: 6px; }
-
-/* 卡片單欄堆疊 */
-.shell > .card { margin: 16px 0; }
-.main-card { border-color: var(--line2); box-shadow: 0 0 28px rgba(0, 180, 255, .12); }
-/* 股票快查 + 我的持股 同一列（桌機 1fr 1fr，等高） */
-.tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; margin: 16px 0; }
-.tool-row .card { margin: 0; height: 100%; min-height: 250px; display: flex; flex-direction: column; }
-.tool-row .card input, .tool-row .card select, .tool-row .card button { box-sizing: border-box; }
-.tool-row #myholdings #holdings { margin-top: auto; }   /* 持股列表貼底，避免撐高/留白不一致 */
-
-/* 股票快查：台股 / 美股 兩列搜尋（input + 查詢按鈕） */
-.stock-search-grid { display: grid; gap: 14px; }
-.stock-search-line { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 10px; align-items: end; }
-.stock-search-line .field { margin: 0; }
-.stock-search-line button { min-height: 44px; height: 46px; }
-
-/* 開始分析按鈕：桌機不滿版、不過粗；強制深色 cyan 描邊（覆蓋任何亮藍實心） */
-#go, button#go, button.primary-lg#go {
-  width: auto; max-width: 220px; min-height: 44px; height: 46px; padding: 0 24px; margin-top: 12px; border-radius: 12px;
-  background: rgba(4, 18, 32, .72) !important; background-image: none !important;
-  border: 1px solid rgba(0, 220, 255, .55) !important; color: #dff7ff !important;
-  box-shadow: inset 0 0 18px rgba(0, 220, 255, .06) !important; }
-#go:hover, button#go:hover, button.primary-lg#go:hover {
-  background: rgba(0, 220, 255, .10) !important; background-image: none !important;
-  border-color: rgba(0, 235, 255, .85) !important; box-shadow: 0 0 16px rgba(0, 220, 255, .22) !important; }
-/* 新聞 modal 市場切換 */
-.news-switch { margin-bottom: 4px; } .news-switch button { width: auto; padding: 8px 14px; font-size: .9rem; }
+.hud-steps { margin: 6px 0 0; padding-left: 20px; color: #cfe0ee; font-size: .92rem; line-height: 1.85; }
+.hud-src { margin: 10px 0 0; color: var(--muted); font-size: .74rem; }
+/* 狀態切換：預設 ready；loading / done / error 各顯示對應 view */
+.hud-view { display: none; } .hud-ready { display: block; }
+.hud.is-loading .hud-ready, .hud.is-done .hud-ready, .hud.is-error .hud-ready { display: none; }
+.hud.is-loading .hud-loading { display: block; }
+.hud.is-done .hud-done { display: block; }
+.hud.is-error .hud-error { display: block; }
+.hud.is-loading .hud-ring::before { animation: spin 1.1s linear infinite; }
+.hud.is-done .hud-core { display: none; } .hud.is-done .hud-check { display: block; }
+.hud.is-done .hud-ring::before { animation: none; opacity: .55; }
+.hud.is-error .hud-title { color: var(--dn); }
 .query-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
 .query-row .field { margin: 0; } .query-row .grow { flex: 1 1 200px; }
 .goldmini .gm-price { font-size: 1.6rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 14px rgba(255, 200, 80, .4); font-variant-numeric: tabular-nums; }
@@ -383,72 +393,61 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .info-section:not([open]) > summary::after { transform: rotate(-90deg); }
 .info-section[open] > summary { margin-bottom: 8px; }
 
-/* 超寬螢幕：版心略寬、K 線略高 */
-@media (min-width: 1400px) {
-  #result canvas.kline { height: 520px; }
+/* ===== 平板 / 手機 ≤980：看盤大屏改單欄流程（手機專用，非桌機縮小） ===== */
+@media (max-width: 980px) {
+  .dashboard-shell { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px calc(60px + env(safe-area-inset-bottom)); }
+  .left-panel, .right-panel { display: contents; }       /* 卡片成為可單獨排序的單欄項目 */
+  .top-title    { order: 0; }
+  #myholdings   { order: 1; }       /* 我的持股在股票快查上方 */
+  #query        { order: 2; }
+  .center-panel { order: 3; }       /* HUD + 報價 / 投資摘要 / K線 / 選股 / 結論 */
+  .bottom-panel { order: 4; }       /* 支持 / 風險 / 價格 */
+  #rightResult  { order: 5; }       /* 基本 / 技術 / 籌碼 / 資料來源（查詢後）*/
+  .left-panel .news-card { order: 6; }
+  .right-panel .goldmini { order: 7; }
+  .right-panel .radar-card { order: 8; }
+  .left-panel .statmini { order: 9; }     /* 市場狀態 */
+  .right-panel .statmini { order: 10; }   /* 資料狀態 */
+  .right-panel .riskcard { order: 11; }
+  .side-panel .card, .center-panel .result, .bottom-panel .result { width: 100%; }
+  .tb-line { display: none; } .tb-mid { flex: 1 1 auto; }
+  .center-panel canvas.kline { height: 340px; }
+  .bottom-cards { grid-template-columns: 1fr; }
+  /* HUD：手機小型（圓環縮小、置中；loading 小圓環旋轉，非長篇文字卡） */
+  .hud { flex-direction: column; text-align: center; gap: 12px; padding: 16px; }
+  .hud-ring { width: 84px; height: 84px; } .hud-core b { font-size: .78rem; } .hud-core span { font-size: .5rem; }
+  .hud-check { font-size: 1.8rem; }
+  .hud-title { font-size: 1.12rem; } .hud-stat { justify-content: center; } .hud-steps { text-align: left; }
 }
 
-/* ===== 平板 ≤900：功能入口卡 2 欄 ===== */
-@media (max-width: 900px) {
-  .entry-cards { grid-template-columns: repeat(2, 1fr); }
-}
-
-/* ===== 手機 ≤720：乾淨單欄，不擠成資訊牆 ===== */
+/* ===== 手機 ≤720：報價 / 決策 / K線工具列 / 分數卡 微調 ===== */
 @media (max-width: 720px) {
-  body { font-size: 14px; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
-  .shell { padding: 14px 14px calc(72px + env(safe-area-inset-bottom)); }
-  .hero { padding: 14px 8px 2px; } .hero h1 { font-size: 1.6rem; } .tagline { font-size: .92rem; }
-  .entry-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: none; }
-  /* HUD：手機隱藏大型圓環版、改顯示精簡提示卡 */
-  .hud-desktop { display: none; }
-  .hud-mobile { display: block; }
-  /* 股票快查 + 我的持股 改單欄，我的持股排在股票快查上方；不強制同高 */
-  .tool-row { display: flex; flex-direction: column; gap: 16px; }
-  .tool-row .card { width: 100%; min-height: unset; height: auto; }
-  .tool-row #myholdings #holdings { margin-top: 8px; }
-  #myholdings { order: 1; } #query { order: 2; }
-  /* 台股 / 美股 搜尋列：input 與按鈕各自滿版上下排 */
-  .stock-search-line { grid-template-columns: 1fr; }
-  .stock-search-line button { width: 100%; }
-  /* 開始分析按鈕：手機滿版好點（仍深色描邊，非亮藍實心） */
-  #go, button#go, button.primary-lg#go { width: 100%; max-width: none; min-height: 46px; background: rgba(4, 18, 32, .72) !important; background-image: none !important; }
-  /* 所有主卡片一律滿版、寬度一致 */
-  .card, .result, .result .block, .quote-hero, .decision, .selection { width: 100%; max-width: 100%; box-sizing: border-box; }
-  .shell > .card, .result .block { padding: 14px; border-radius: 16px; margin: 14px 0; }
-  h2, h3, .result .block h4, .info-section > summary { font-size: 1.08rem; }
+  body { font-size: 14px; }
+  h2, h3, .result .block h4, .info-section > summary { font-size: 1.06rem; }
   p, li { font-size: 15px; line-height: 1.7; }
   button, select, input { min-height: 42px; font-size: 15px; }
-  /* 報價主卡：現價 ~37px，不過大 */
   .quote-hero { padding: 14px 16px; flex-direction: column; align-items: stretch; gap: 12px; }
   .quote-hero .px { font-size: 2.3rem; } .qh-name h3 { font-size: 1.2rem; }
   .qh-right { align-items: stretch; } .qh-meta { text-align: left; grid-template-columns: repeat(2, 1fr); }
-  /* 投資決策摘要：隱藏信心圓環，只保留 badge + 短句 */
   .decision-hero { flex-direction: column; align-items: stretch; }
   .dh-ring { display: none; }
   .decision-hero .op, .decision-hero .sl-note { font-size: 16px; line-height: 1.75; }
-  /* K 線工具列：3 欄 grid、不爆版、按鈕 ≥44px */
   .kl-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .kl-tools button { min-height: 44px; font-size: 15px; padding: 8px 6px; }
   .kl-tools .kl-range { grid-column: 1 / -1; text-align: center; }
-  #result canvas.kline { height: 340px; }
-  /* 選股分數拆解：分數小卡 2 欄 */
+  .center-panel canvas.kline { height: 320px; }
   .score-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .score-chip { min-width: 0; }
-  /* 折疊區：summary 好點按 */
   .info-section > summary { padding: 2px 0; min-height: 40px; }
-  /* modal 不超出螢幕 */
   .modal-dialog { max-width: 100%; }
 }
 
-/* ===== 小手機 ≤430：再壓縮，避免爆版 ===== */
+/* ===== 小手機 ≤430 ===== */
 @media (max-width: 430px) {
-  .shell { padding: 10px 10px calc(72px + env(safe-area-inset-bottom)); }
-  .entry-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .shell > .card, .result .block { padding: 12px; }
-  .hero h1 { font-size: 1.4rem; }
+  .dashboard-shell { padding: 10px 10px calc(56px + env(safe-area-inset-bottom)); }
+  .card, .result .block { padding: 12px; }
+  .tb-mid h1 { font-size: 1.25rem; }
   .quote-hero .px { font-size: 1.95rem; } .qh-name h3 { font-size: 1.1rem; }
   .qh-meta { grid-template-columns: 1fr 1fr; gap: 3px 12px; }
   .dh-badges { gap: 6px; } .dh-b { font-size: .82rem; padding: 3px 8px; }
-  .kl-tools button { font-size: 15px; min-height: 44px; }
-  #result canvas.kline { height: 320px; }
 }
