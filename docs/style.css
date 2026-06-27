@@ -257,6 +257,10 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .side-result .block { margin: 0 0 14px; }
 .bottom-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
 .bottom-cards .block { margin: 0; } .bottom-result .disc { margin-top: 12px; text-align: center; }
+/* 支持 / 風險 / 價格區間：接在選股邏輯後方的 3 欄小卡（中央主分析區內） */
+.center-foot .bottom-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.center-foot .block { background: rgba(4, 12, 22, .55); }
+.result > .disc { margin-top: 4px; text-align: center; color: var(--muted); }
 
 @media (min-width: 1600px) {
   .dashboard-shell { grid-template-columns: 330px minmax(0, 1fr) 330px; padding: 18px 30px 28px; }
@@ -393,26 +397,31 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .info-section:not([open]) > summary::after { transform: rotate(-90deg); }
 .info-section[open] > summary { margin-bottom: 8px; }
 
-/* ===== 平板 / 手機 ≤980：看盤大屏改單欄流程（手機專用，非桌機縮小） ===== */
+/* ===== 平板 / 手機 ≤980：單欄流程（手機專用版型，非桌機縮小） ===== */
 @media (max-width: 980px) {
-  .dashboard-shell { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px calc(60px + env(safe-area-inset-bottom)); }
-  .left-panel, .right-panel { display: contents; }       /* 卡片成為可單獨排序的單欄項目 */
-  .top-title    { order: 0; }
-  #myholdings   { order: 1; }       /* 我的持股在股票快查上方 */
-  #query        { order: 2; }
-  .center-panel { order: 3; }       /* HUD + 報價 / 投資摘要 / K線 / 選股 / 結論 */
-  .bottom-panel { order: 4; }       /* 支持 / 風險 / 價格 */
-  #rightResult  { order: 5; }       /* 基本 / 技術 / 籌碼 / 資料來源（查詢後）*/
-  .left-panel .news-card { order: 6; }
-  .right-panel .goldmini { order: 7; }
-  .right-panel .radar-card { order: 8; }
-  .left-panel .statmini { order: 9; }     /* 市場狀態 */
+  .dashboard-shell { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px calc(140px + env(safe-area-inset-bottom)); }
+  /* 三欄都 display:contents，讓每張卡片 / 結果容器成為可單獨排序的單欄項目 */
+  .left-panel, .right-panel, .center-panel { display: contents; }
+  .top-title     { order: 0; }
+  #myholdings    { order: 1; }      /* 我的持股固定在上方 */
+  #query         { order: 2; }      /* 股市快查 */
+  #centerResult  { order: 3; }      /* 股票查詢結果（固定在股市快查下方）*/
+  #rightResult   { order: 4; }      /* 基本 / 技術 / 籌碼 / 資料來源（隨股票結果）*/
+  #hud           { order: 5; }      /* 準備分析 / 系統提示 */
+  .news-card     { order: 6; }
+  .goldmini      { order: 7; }
+  .radar-card    { order: 8; }
+  .left-panel .statmini  { order: 9; }    /* 市場狀態 */
   .right-panel .statmini { order: 10; }   /* 資料狀態 */
-  .right-panel .riskcard { order: 11; }
-  .side-panel .card, .center-panel .result, .bottom-panel .result { width: 100%; }
+  .riskcard      { order: 11; }
+  .bottom-panel  { order: 12; }     /* 已不使用，置最後（空）*/
+  /* 卡片單欄滿版、間距一致 */
+  .card, .block, .result, .news-card, .statmini, .goldmini, .riskcard { width: 100%; max-width: 100%; box-sizing: border-box; }
   .tb-line { display: none; } .tb-mid { flex: 1 1 auto; }
   .center-panel canvas.kline { height: 340px; }
-  .bottom-cards { grid-template-columns: 1fr; }
+  .bottom-cards, .center-foot .bottom-cards { grid-template-columns: 1fr; }
+  /* 股市快查：壓縮高度（台股 / 美股上下排，按鈕 100%，不過度留白）*/
+  #query { padding: 14px; } .stock-search-grid { gap: 10px; } .stock-search-line { gap: 6px; }
   /* HUD：手機小型（圓環縮小、置中；loading 小圓環旋轉，非長篇文字卡） */
   .hud { flex-direction: column; text-align: center; gap: 12px; padding: 16px; }
   .hud-ring { width: 84px; height: 84px; } .hud-core b { font-size: .78rem; } .hud-core span { font-size: .5rem; }

@@ -553,7 +553,7 @@ function clearResult(loadingMsg) {
 }
 // 手機版（≤720px）預設收合基本面 / 技術面 / 籌碼面 / 資料來源；桌機展開
 function syncAccordion() {
-  const mob = window.matchMedia("(max-width: 720px)").matches;
+  const mob = window.matchMedia("(max-width: 980px)").matches;
   document.querySelectorAll("#rightResult .info-section").forEach((d) => {
     if (mob) d.removeAttribute("open"); else d.setAttribute("open", "");
   });
@@ -732,15 +732,16 @@ function renderResult(a, meta) {
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
       <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></details>`;
 
-  // 加分 / 扣分 / 資料說明 → 底部卡（看盤大屏底部橫向）
+  // 支持 / 扣分 / 資料說明 + 價格區間 → 接在選股邏輯之後（中央主分析區下方，不再放頁尾）
   const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
     + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>`
     + (noteList.length ? `<div class="block sl-info"><h4>ℹ️ 資料說明</h4><ul>${liArr(noteList)}</ul></div>` : "");
-  // 桌機看盤大屏三欄分流：中央=報價/決策/K線/選股/結論；右側=基本/技/籌/資料來源；底部=支持/風險/價格
-  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}${concl}</div>`;
+  // 中央 = 報價/決策/K線/選股 + 支持/風險/價格(3欄小卡) + 結論；右側 = 基本/技/籌/資料來源；底部不再使用
+  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}`
+    + `<div class="center-foot"><div class="bottom-cards">${reasonsBottom}${zones}</div></div>`
+    + `${concl}<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
   const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}</div>`;
-  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${reasonsBottom}${zones}</div><p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
-  return { center, right, bottom };
+  return { center, right, bottom: "" };
 }
 
 /* ===================== 黃金價格分析 ===================== */
@@ -957,6 +958,23 @@ let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setT
 
 /* ---------- 事件 ---------- */
 function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGold(); }
+// 桌機：黃金分析渲染到中央主畫面（重用 buildGold/renderGold/setupKline，不新增 API）
+async function loadGoldCenter() {
+  stopAuto(); CUR = null; SEQ++; setHudState("hide");
+  $("centerResult").innerHTML = `<div class="result"><div class="muted">載入金價分析中…</div></div>`;
+  $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
+  try {
+    const g = await buildGold(); g.decision = decideGold(g);
+    $("centerResult").innerHTML = `<div class="result">${renderGold(g, { updatedAt: nowStamp(), autoVal: "off" })}</div>`;
+    const wrap = $("centerResult").querySelector(".kline-wrap");
+    if (wrap) setupKline(wrap, g.bars, g.ind.support, g.ind.resistance, null, Math.min(252, g.bars.length), true);
+    const btn = $("centerResult").querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => loadGoldCenter());
+    const sel = $("centerResult").querySelector(".upd-auto"); if (sel) { sel.value = "off"; sel.disabled = true; }   // 中央版不自動更新，避免與股票 timer 衝突
+  } catch (e) {
+    const ext = GOLD_EXT.map(([t, u]) => `<a href="${u}">${esc(t)}</a>`).join(" ・ ");
+    $("centerResult").innerHTML = `<div class="result"><div class="err">⚠️ 黃金價格資料來源暫時不可用，請稍後再試。</div><p class="news-links">${ext}</p></div>`;
+  }
+}
 
 /* ---------- Modal 彈窗 ---------- */
 function openModal(id) { const m = $(id); if (!m) return; document.querySelectorAll(".modal.open").forEach((o) => { if (o !== m) closeModal(o); }); m.classList.add("open"); m.setAttribute("aria-hidden", "false"); document.body.classList.add("modal-open"); const inp = m.querySelector("input"); if (inp) setTimeout(() => inp.focus(), 70); }
@@ -972,7 +990,10 @@ document.querySelectorAll("[data-act]").forEach((el) => {
     else if (act === "usnews") openModal("modal-usnews");
     else if (act === "focus-symbol") { const q = $("query"); if (q) q.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => { const tw = $("tw-search"); if (tw) tw.focus(); }, 320); }
     else if (act === "focus-holdings") { const h = $("myholdings"); if (h) { h.scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => $("h-symbol").focus(), 320); } }
-    else if (act === "gold") { openModal("modal-gold"); ensureGold(); requestAnimationFrame(() => { const cv = $("goldBody").querySelector("canvas.kline"); if (cv && cv._redraw) cv._redraw(); }); }
+    else if (act === "gold") {
+      if (window.matchMedia("(min-width: 981px)").matches) { loadGoldCenter(); const c = $("query"); if (c) c.scrollIntoView({ behavior: "smooth", block: "start" }); }
+      else { openModal("modal-gold"); ensureGold(); requestAnimationFrame(() => { const cv = $("goldBody").querySelector("canvas.kline"); if (cv && cv._redraw) cv._redraw(); }); }
+    }
   };
   el.addEventListener("click", handler);
   el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handler(); } });
