@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-027" />
+  <link rel="stylesheet" href="./style.css?v=20260627-001" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -72,27 +72,44 @@
       <!-- 中央：HUD 狀態面板 + 分析結果 -->
       <section class="center-panel">
         <section class="hud" id="hud">
-          <div class="hud-ring"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div><div class="hud-check">✓</div></div>
-          <div class="hud-main">
-            <div class="hud-view hud-ready">
-              <h3 class="hud-title">準備分析</h3>
-              <p class="hud-hint">請在左側輸入股票代號或名稱</p>
-              <div class="hud-stat"><span>台股搜尋：可用</span><span>美股搜尋：可用</span><span>黃金分析：可用</span></div>
+          <!-- 查詢前：大面板（左功能小卡 + MARKET INTELLIGENCE 核心 + 右功能小卡）-->
+          <div class="hud-ready">
+            <h3 class="hud-title hud-ready-title">準備分析</h3>
+            <p class="hud-hint">請在左側輸入股票代號或名稱</p>
+            <div class="hud-ready-grid">
+              <div class="hud-feats">
+                <div class="hud-feat"><span class="ico">📈</span><div><b>台股搜尋</b><small>多券商報價整合</small></div></div>
+                <div class="hud-feat"><span class="ico">🌐</span><div><b>美股搜尋</b><small>美股即時與歷史資料</small></div></div>
+                <div class="hud-feat"><span class="ico">🥇</span><div><b>黃金分析</b><small>國際金價與歷年走勢</small></div></div>
+              </div>
+              <div class="hud-ring hud-ring-big"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div></div>
+              <div class="hud-feats">
+                <div class="hud-feat"><span class="ico">📊</span><div><b>技術面分析</b><small>均線・K線・指標</small></div></div>
+                <div class="hud-feat"><span class="ico">🏦</span><div><b>籌碼面分析</b><small>主力・投信・外資</small></div></div>
+                <div class="hud-feat"><span class="ico">💹</span><div><b>基本面分析</b><small>財報・EPS・評價</small></div></div>
+                <div class="hud-feat"><span class="ico">🎯</span><div><b>多維度評分</b><small>完整評分與風險檢視</small></div></div>
+              </div>
             </div>
-            <div class="hud-view hud-loading">
-              <h3 class="hud-title">正在分析 <span class="hud-sym"></span></h3>
-              <ol class="hud-steps"><li>讀取價格資料</li><li>計算技術指標</li><li>整理選股邏輯</li><li>產生分析結果</li></ol>
-              <p class="hud-sub">正在分析中，請稍候…</p>
+            <p class="hud-src">ⓘ 僅供研究與趨勢分析，不構成投資建議。</p>
+          </div>
+          <!-- 查詢中 / 完成 / 失敗：小面板（圓環 + 狀態文字）-->
+          <div class="hud-status">
+            <div class="hud-ring"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div><div class="hud-check">✓</div></div>
+            <div class="hud-main">
+              <div class="hud-view hud-loading">
+                <h3 class="hud-title">正在分析 <span class="hud-sym"></span></h3>
+                <ol class="hud-steps"><li>讀取價格資料</li><li>計算技術指標</li><li>整理選股邏輯</li><li>產生分析結果</li></ol>
+                <p class="hud-sub">正在分析中，請稍候…</p>
+              </div>
+              <div class="hud-view hud-done">
+                <h3 class="hud-title">分析完成</h3>
+                <p class="hud-sub">以下為 <span class="hud-sym"></span> 的分析結果</p>
+              </div>
+              <div class="hud-view hud-error">
+                <h3 class="hud-title">查詢失敗</h3>
+                <p class="hud-sub">請確認代號或稍後再試。</p>
+              </div>
             </div>
-            <div class="hud-view hud-done">
-              <h3 class="hud-title">分析完成</h3>
-              <p class="hud-sub">以下為 <span class="hud-sym"></span> 的分析結果</p>
-            </div>
-            <div class="hud-view hud-error">
-              <h3 class="hud-title">查詢失敗</h3>
-              <p class="hud-sub">請確認代號或稍後再試。</p>
-            </div>
-            <p class="hud-src">僅供研究與趨勢分析，不構成投資建議。</p>
           </div>
         </section>
         <div id="centerResult"></div>
@@ -108,21 +125,14 @@
 
         <section class="card radar-card">
           <h2>📡 今日市場雷達</h2>
-          <div class="radar radar3">
+          <div class="radar radar2">
             <button class="radar-cell" data-act="twnews"><b>台股</b><small>可查詢</small></button>
             <button class="radar-cell" data-act="usnews"><b>美股</b><small>可查詢</small></button>
-            <button class="radar-cell" data-act="gold"><b>黃金</b><small>可查詢</small></button>
           </div>
         </section>
 
-        <section class="card statmini">
-          <h2>🛢 資料狀態</h2>
-          <div class="stat-row"><span>股票資料</span><b>FinMind</b></div>
-          <div class="stat-row"><span>黃金現價</span><b>Gold-API</b></div>
-          <div class="stat-row"><span>歷史金價</span><b>FinMind GDF</b></div>
-          <div class="stat-row"><span>新聞</span><b>外部搜尋</b></div>
-          <div class="stat-row"><span>價格類型</span><b>最新可取得資料</b></div>
-        </section>
+        <!-- 查詢後：基本面 / 技術面 / 籌碼面 / 資料來源 顯示在此（風險提示之上）-->
+        <div id="rightResult"></div>
 
         <section class="card riskcard">
           <h2>⚠ 風險提示</h2>
@@ -133,8 +143,6 @@
             <li>美股完整基本面需未來獨立 market_data_backend 補強。</li>
           </ul>
         </section>
-
-        <div id="rightResult"></div>
       </aside>
 
       <!-- 底部：支持 / 風險 / 價格（橫跨三欄） -->
@@ -191,6 +199,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-027"></script>
+  <script src="./app.js?v=20260627-001"></script>
 </body>
 </html>

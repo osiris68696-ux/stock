@@ -726,7 +726,9 @@ function renderResult(a, meta) {
 
   const z = priceZones(i);
   const zones = `<div class="block"><h4>③ 價格區間 / 進場參考</h4>${z ? `<pre class="zones">${esc(z)}</pre>` : "<p>資料不足</p>"}</div>`;
-  const concl = `<div class="block conclusion"><h4>⑧ 結論</h4><p>${esc(conclusion(i, d))}</p></div>`;
+  const conclInner = `<h4>⑧ 結論</h4><p>${esc(conclusion(i, d))}</p>`;
+  const conclDesktop = `<div class="block conclusion concl-desktop">${conclInner}</div>`;   // 桌機：結論在中央
+  const conclMobile = `<div class="block conclusion concl-mobile">${conclInner}</div>`;     // 手機：結論在基本/技/籌之後
   const srcList = [`資料來源：${esc(a.source)}`, `最新資料日期：${esc(a.lastDate)}`, `最新收盤價：${fmt(i.close)}`, `資料筆數：${a.rows} 筆`, `是否為最近交易日資料：${recent ? "是（" + lag + " 天內）" : "否（距今約 " + lag + " 天）"}`, `價格類型：${PRICE_TYPE}`];
   const source = `<details class="block source info-section" open><summary>⑦ 資料來源與更新時間</summary>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}
       <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
@@ -739,8 +741,9 @@ function renderResult(a, meta) {
   // 中央 = 報價/決策/K線/選股 + 支持/風險/價格(3欄小卡) + 結論；右側 = 基本/技/籌/資料來源；底部不再使用
   const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}`
     + `<div class="center-foot"><div class="bottom-cards">${reasonsBottom}${zones}</div></div>`
-    + `${concl}<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
-  const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}</div>`;
+    + `${conclDesktop}<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
+  // 右側 = 基本面 / 技術面 / 籌碼面 / 資料來源（+ 手機版結論，桌機隱藏）
+  const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}${conclMobile}</div>`;
   return { center, right, bottom: "" };
 }
 
