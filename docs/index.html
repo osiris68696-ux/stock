@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-024" />
+  <link rel="stylesheet" href="./style.css?v=20260623-025" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -23,11 +23,40 @@
       <button class="entry-card" data-act="twnews"><span class="ico">📰</span><b>新聞搜尋</b><small>台股 / 美股新聞</small></button>
     </div>
 
-    <!-- 中央視覺 HUD（純 CSS，僅視覺與狀態提示，不放任何功能） -->
-    <section class="hud" id="hud">
+    <!-- 查詢狀態面板：桌機大型 HUD（純 CSS，無功能按鈕） -->
+    <section class="hud hud-desktop" id="hudDesktop">
       <div class="hud-ring"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div></div>
-      <p class="hud-hint">輸入股票代號開始分析</p>
-      <p class="hud-src">僅供研究與趨勢分析，不構成投資建議。</p>
+      <div class="hud-main">
+        <div class="hud-ready">
+          <h3 class="hud-title">準備分析</h3>
+          <p class="hud-hint">請在下方輸入股票代號或名稱</p>
+          <ul class="hud-tips">
+            <li>台股：2330、台積電、2887</li>
+            <li>美股：NVDA、輝達、AAPL、Apple</li>
+            <li>支援 ETF 與黃金分析</li>
+          </ul>
+          <div class="hud-stat"><span>台股搜尋：可用</span><span>美股搜尋：可用</span><span>黃金分析：可用</span></div>
+        </div>
+        <div class="hud-loading">
+          <h3 class="hud-title">正在分析 <span class="hud-sym"></span></h3>
+          <ol class="hud-steps"><li>讀取價格資料</li><li>計算技術指標</li><li>整理選股邏輯</li><li>產生分析結果</li></ol>
+        </div>
+        <p class="hud-src">僅供研究與趨勢分析，不構成投資建議。</p>
+      </div>
+    </section>
+
+    <!-- 查詢狀態面板：手機精簡提示卡 -->
+    <section class="hud-mobile" id="hudMobile">
+      <div class="hud-ready">
+        <h3 class="hud-title">準備分析</h3>
+        <p>可輸入台股、美股代號或中文 / 英文名稱。</p>
+        <p class="hud-eg">台股：2330、台積電　美股：NVDA、輝達</p>
+      </div>
+      <div class="hud-loading">
+        <h3 class="hud-title">正在分析 <span class="hud-sym"></span>…</h3>
+        <p>讀取價格與技術資料中。</p>
+      </div>
+      <p class="hud-src">僅供研究，不構成投資建議。</p>
     </section>
 
     <!-- 主功能：股票快查 + 我的持股 同一列 -->
@@ -117,6 +146,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-024"></script>
+  <script src="./app.js?v=20260623-025"></script>
 </body>
 </html>

@@ -263,9 +263,32 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .hud-core b { display: block; font-size: 1rem; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 12px var(--cyan); }
 .hud-core span { font-size: .62rem; letter-spacing: 3px; color: var(--muted); }
 .hud-hint { margin: 0; color: #cfe6f7; font-size: 1rem; letter-spacing: .5px; }
-.hud-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.hud-tags span { font-size: .78rem; color: #bcd9ee; padding: 5px 13px; border-radius: 999px; border: 1px solid var(--line); background: rgba(3, 14, 26, .5); }
 .hud-src { margin: 0; color: var(--muted); font-size: .76rem; }
+
+/* 桌機大型 HUD：圓環在左、狀態內容在右（有實際用途） */
+.hud-desktop { flex-direction: row; align-items: center; text-align: left; gap: 26px; }
+.hud-desktop .hud-ring { flex: 0 0 auto; }
+.hud-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.hud-title { margin: 0; font-size: 1.3rem; color: #eaf6ff; }
+.hud-tips { margin: 4px 0 0; padding-left: 18px; color: var(--muted); font-size: .9rem; line-height: 1.7; }
+.hud-tips li { margin: 2px 0; }
+.hud-stat { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.hud-stat span { font-size: .78rem; color: var(--up); padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: rgba(3, 14, 26, .5); }
+.hud-steps { margin: 6px 0 2px; padding-left: 20px; color: #cfe0ee; font-size: .92rem; line-height: 1.8; }
+.hud-sym { color: var(--cyan); }
+
+/* 查詢中狀態切換：預設顯示 ready，加 .is-loading 改顯示 loading */
+.hud-loading { display: none; }
+.hud.is-loading .hud-ready, .hud-mobile.is-loading .hud-ready { display: none; }
+.hud.is-loading .hud-loading, .hud-mobile.is-loading .hud-loading { display: block; }
+
+/* 手機精簡提示卡（桌機隱藏） */
+.hud-mobile { display: none; margin: 14px 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px;
+  background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); box-shadow: var(--glow); }
+.hud-mobile .hud-title { font-size: 1.1rem; margin: 0 0 4px; }
+.hud-mobile p { margin: 2px 0; font-size: .9rem; color: #cfe0ee; line-height: 1.6; }
+.hud-mobile .hud-eg { color: var(--muted); }
+.hud-mobile .hud-src { margin-top: 6px; }
 
 /* 卡片單欄堆疊 */
 .shell > .card { margin: 16px 0; }
@@ -376,8 +399,9 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .shell { padding: 14px 14px calc(72px + env(safe-area-inset-bottom)); }
   .hero { padding: 14px 8px 2px; } .hero h1 { font-size: 1.6rem; } .tagline { font-size: .92rem; }
   .entry-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: none; }
-  /* HUD 手機版縮小 */
-  .hud { padding: 18px 14px; gap: 12px; } .hud-ring { width: 120px; height: 120px; } .hud-hint { font-size: .95rem; }
+  /* HUD：手機隱藏大型圓環版、改顯示精簡提示卡 */
+  .hud-desktop { display: none; }
+  .hud-mobile { display: block; }
   /* 股票快查 + 我的持股 改單欄，我的持股排在股票快查上方；不強制同高 */
   .tool-row { display: flex; flex-direction: column; gap: 16px; }
   .tool-row .card { width: 100%; min-height: unset; height: auto; }

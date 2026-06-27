@@ -558,14 +558,24 @@ function syncAccordion() {
     if (mob) d.removeAttribute("open"); else d.setAttribute("open", "");
   });
 }
+// HUD / 狀態面板：ready（查詢前）/ loading（查詢中）/ done（完成隱藏）
+function setHudState(state, sym) {
+  ["hudDesktop", "hudMobile"].forEach((id) => {
+    const h = $(id); if (!h) return;
+    if (state === "done") { h.style.display = "none"; return; }
+    h.style.display = "";                                  // 交還 CSS（媒體查詢決定桌機/手機誰顯示）
+    h.classList.toggle("is-loading", state === "loading");
+    if (sym != null) { const s = h.querySelector(".hud-sym"); if (s) s.textContent = sym; }
+  });
+}
 async function analyze(symbol, market, cost, qty) {
   symbol = String(symbol || "").trim().toUpperCase();
-  const hud = $("hud"); if (hud) hud.style.display = "none";   // 查詢後隱藏 HUD 視覺區
   const seq = ++SEQ; stopAuto();
   if (market === "TW" && !TW_RE.test(symbol)) { clearResult(); $("result").innerHTML = `<div class="result"><div class="err">⚠️ 台股代號格式不正確（例 2330）</div></div>`; return; }
   if (market === "US" && !US_RE.test(symbol)) { clearResult(); $("result").innerHTML = `<div class="result"><div class="err">⚠️ 美股代號格式不正確（例 AAPL）</div></div>`; return; }
   CUR = { symbol, market, cost: parseFloat(cost) || null, qty: parseFloat(qty) || null, autoVal: "off", lastClose: null };
-  clearResult(`分析 ${market} ${symbol} 中…`);
+  setHudState("loading", `${market === "US" ? "美股" : "台股"} ${symbol}`);   // 查詢中狀態（不直接消失）
+  clearResult();                                                              // 載入提示改由 HUD 顯示
   await refreshCurrent(seq, true);
 }
 async function refreshCurrent(seq, isFirst) {
@@ -588,11 +598,12 @@ async function refreshCurrent(seq, isFirst) {
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
     setupCurControls();
     syncAccordion();
+    setHudState("done");                                  // 查詢完成 → 隱藏 HUD，不擠壓結果
     if (!isFirst && prevClose != null && a.ind.close != null && a.ind.close !== prevClose) flashCur(a.ind.close > prevClose);
   } catch (e) {
     if (seq !== SEQ) return;
     const msg = e.message === "EMPTY" ? "查無最新股價資料，請確認股票代號或稍後再試。" : (isFirst ? "資料更新失敗，請稍後重試。" : "更新失敗，請稍後再試。");
-    if (isFirst) { $("result").innerHTML = `<div class="result"><div class="err">⚠️ ${esc(msg)}</div></div>`; }
+    if (isFirst) { setHudState("done"); $("result").innerHTML = `<div class="result"><div class="err">⚠️ ${esc(msg)}</div></div>`; }
     else { const st2 = $("result").querySelector(".upd-status"); if (st2) { st2.textContent = msg; st2.classList.add("upd-err"); } }
   }
 }
