@@ -347,6 +347,31 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 
 /* 結論：桌機顯示中央版、隱藏右側版；手機相反（在 ≤980 切換）*/
 .concl-mobile { display: none; }
+.hint-m { display: none; }    /* 手機版提示文字（桌機隱藏）*/
+
+/* ===== 桌機 ≥981：查詢前 ready HUD 大屏，撐滿中間第一屏、圓環為主視覺核心 ===== */
+@media (min-width: 981px) {
+  .dashboard-shell { min-height: calc(100vh - 44px); }
+  .center-panel { min-height: calc(100vh - 188px); }
+  /* 只有 ready 狀態才撐滿；loading/done/error 維持小面板 */
+  .hud:not(.is-loading):not(.is-done):not(.is-error):not(.is-hidden) {
+    min-height: calc(100vh - 188px); display: flex; flex-direction: column; justify-content: center; padding: 32px 38px; }
+  .hud-ready { display: flex; flex-direction: column; justify-content: center; flex: 1 1 auto; gap: 10px; }
+  .hud-ready-title { font-size: 2.1rem; }
+  .hud-ready .hud-hint { font-size: 1.05rem; margin-bottom: 8px; }
+  /* 左功能卡 | 大圓環 | 右功能卡，圍繞核心、垂直置中、填滿主區 */
+  .hud-ready-grid { grid-template-columns: minmax(190px, 230px) minmax(280px, 1fr) minmax(190px, 230px);
+    align-items: center; gap: 30px; flex: 1 1 auto; margin: 16px 0; }
+  .hud-ring-big { width: 280px; height: 280px;
+    box-shadow: inset 0 0 50px rgba(0, 180, 255, .18), 0 0 60px rgba(0, 180, 255, .22); }
+  .hud-ring-big .hud-core b { font-size: 1.7rem; } .hud-ring-big .hud-core span { font-size: .92rem; }
+  /* 圓環下方光暈底座（圖片 1 的科技感平台，純 CSS）*/
+  .hud-ready-grid > .hud-ring-big { position: relative; }
+  .hud-ready-grid > .hud-ring-big::before { z-index: 0; }
+  .hud-feat { min-height: 84px; padding: 16px 18px; }
+  .hud-feat .ico { font-size: 1.8rem; } .hud-feat b { font-size: 1.04rem; } .hud-feat small { font-size: .82rem; }
+  .hud-src { font-size: .82rem; }
+}
 .query-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
 .query-row .field { margin: 0; } .query-row .grow { flex: 1 1 200px; }
 .goldmini .gm-price { font-size: 1.6rem; font-weight: 800; color: var(--gold); text-shadow: 0 0 14px rgba(255, 200, 80, .4); font-variant-numeric: tabular-nums; }
@@ -429,10 +454,12 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .news-card     { order: 6; }
   .goldmini      { order: 7; }
   .riskcard      { order: 8; }
-  /* 市場雷達、市場狀態、資料狀態不出現在手機主流程 */
-  .radar-card, .left-panel .statmini, .right-panel .statmini, .bottom-panel { display: none; }
+  /* 手機版必須移除：今日市場雷達 / 市場狀態 / 資料狀態（桌機不受影響）*/
+  .radar-card, .left-panel .statmini, .right-panel .statmini, .bottom-panel { display: none !important; }
   /* 結論：手機顯示右側版（在基本/技/籌之後）、隱藏中央版 */
   .concl-desktop { display: none; } .concl-mobile { display: block; }
+  /* 提示文字：手機版改用 .hint-m */
+  .hint-d { display: none; } .hint-m { display: inline; }
   /* 卡片單欄滿版、間距一致 */
   .card, .block, .result, .news-card, .goldmini, .riskcard { width: 100%; max-width: 100%; box-sizing: border-box; }
   .tb-line { display: none; } .tb-mid { flex: 1 1 auto; }
@@ -440,16 +467,15 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .bottom-cards, .center-foot .bottom-cards { grid-template-columns: 1fr; }
   /* 股市快查：壓縮高度（台股 / 美股上下排，按鈕 100%，不過度留白）*/
   #query { padding: 14px; } .stock-search-grid { gap: 10px; } .stock-search-line { gap: 6px; }
-  /* HUD 查詢前：手機壓縮成精簡卡（隱藏左右功能小卡、圓環縮小、置中）*/
-  .hud { padding: 16px; }
-  .hud-ready { text-align: center; }
-  .hud-ready-grid { display: block; }
-  .hud-ready .hud-feats { display: none; }
-  .hud-ring-big { width: 96px; height: 96px; margin: 10px auto; }
-  .hud-ring-big .hud-core b { font-size: .82rem; } .hud-ready-title { font-size: 1.3rem; }
-  /* HUD 查詢中 / 完成：圓環置中、文字置中 */
+  /* HUD 查詢前：手機改成精簡提示卡（不顯示大型圓環與功能小卡，高度 110~150px）*/
+  .hud { padding: 16px 18px; min-height: 0 !important; display: block; }
+  .hud-ready { display: block; text-align: left; min-height: 110px; }
+  .hud-ready-grid, .hud-ready .hud-feats, .hud-ring-big { display: none !important; }
+  .hud-ready-title { font-size: 1.18rem; } .hud-ready .hud-hint { margin-bottom: 6px; }
+  .hud-src { text-align: left; margin-top: 8px; }
+  /* HUD 查詢中 / 完成：小圓環置中、文字置中 */
   .hud-status { flex-direction: column; text-align: center; gap: 12px; }
-  .hud-ring { width: 96px; height: 96px; } .hud-check { font-size: 1.9rem; }
+  .hud-status .hud-ring { width: 96px; height: 96px; } .hud-check { font-size: 1.9rem; }
   .hud-status .hud-title { font-size: 1.14rem; } .hud-steps { display: inline-block; text-align: left; }
 }
 
