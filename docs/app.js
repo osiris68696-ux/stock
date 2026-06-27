@@ -223,7 +223,7 @@ function evaluateStockLogic(a) {
     // ETF 改以技術面、價格位置、風險控制評分，不產生個股基本面 missing、也不因缺這些欄位扣分。
   } else if (isUS) {
     dataNotes.push("基本面：資料源限制 — 純前端版尚未接入穩定的美股基本面資料源，EPS / P/E / P/B / 營收成長率暫不納入完整評分；屬資料源限制，非公司基本面不佳。");
-    dataNotes.push("籌碼面：資料源限制 — 美股無台股三大法人 / 融資融券格式，純前端版尚未接入機構持股 / Short Interest / 分析師評等，籌碼面保守處理（未來建 market_data_backend 才補 SEC / Finnhub / Alpha Vantage / FMP）。");
+    dataNotes.push("籌碼面：資料源限制 — 美股無台股三大法人 / 融資融券格式，純前端版尚未接入機構持股 / Short Interest / 分析師評等，籌碼面保守處理；完整美股籌碼資料有限，分析結果僅供參考。");
   } else {
     if (fundMissing) risks.push("基本面資料不足，無法確認公司獲利與估值是否支撐目前股價。");
     if (f.eps == null) missing.push("EPS 資料不足");
@@ -308,7 +308,7 @@ function evaluateStockLogic(a) {
   } else if (isETF) {
     attr = "ETF 是一籃子標的，不適合用單一公司 EPS / P/E / P/B 判斷，應以追蹤標的走勢、價格位置（RSI、支撐 / 壓力）與風險控制為主，操作上偏分批、定期定額與長期配置，不宜短線追高。";
   } else if (isUS) {
-    attr = "目前純前端版本尚未接入完整美股基本面與籌碼資料，因此美股分析主要依價格、均線、RSI、支撐 / 壓力判斷。這是資料源限制，不代表公司本身基本面不佳；未來 market_data_backend 才能補 SEC / Finnhub / Alpha Vantage / FMP 等資料。";
+    attr = "目前純前端版本尚未接入完整美股基本面與籌碼資料，因此美股分析主要依價格、均線、RSI、支撐 / 壓力判斷。這是資料源限制，不代表公司本身基本面不佳；完整美股基本面與籌碼資料有限，分析結果僅供參考。";
   } else if (cat === "金融股") {
     attr = "金融股通常以殖利率、股價淨值比（P/B）、利率環境與獲利穩定性評估，偏向防禦與存股配置；短線仍需留意是否過熱。";
   } else {
@@ -697,7 +697,7 @@ function renderResult(a, meta) {
     ]) + `</details>`;
   } else if (m !== "TW") {
     fundamental = `<details class="block info-section" open><summary>④ 基本面　<small>資料源限制</small></summary><p>基本面：<b>資料源限制</b></p>`
-      + `<p class="exp">目前純前端版本尚未接入穩定的美股基本面資料源，因此 EPS、P/E、P/B、營收成長率暫不納入完整評分。這是資料源限制，不代表該公司基本面不佳。未來若建立 market_data_backend，才會補 SEC / Finnhub / Alpha Vantage / FMP 等資料源。</p></details>`;
+      + `<p class="exp">目前純前端版本尚未接入穩定的美股基本面資料源，因此 EPS、P/E、P/B、營收成長率暫不納入完整評分。這是資料源限制，不代表該公司基本面不佳。完整美股基本面資料有限，分析結果僅供參考。</p></details>`;
   } else {
     const fundList = [
       `EPS（近四季合計）：${f.eps != null ? fmt(f.eps, 2) : "資料不足"}`, `本益比 P/E：${f.pe != null ? fmt(f.pe, 1) : "資料不足"}`, `股價淨值比 P/B：${f.pb != null ? fmt(f.pb, 2) : "資料不足"}`,

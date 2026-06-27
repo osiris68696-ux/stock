@@ -315,15 +315,34 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .hud-steps { margin: 6px 0 0; padding-left: 20px; color: #cfe0ee; font-size: .92rem; line-height: 1.85; }
 .hud-src { margin: 14px 0 0; color: var(--muted); font-size: .76rem; text-align: center; }
 
-/* 查詢前大面板：左功能卡 | 大圓環 | 右功能卡 */
-.hud-ready { text-align: center; }
-.hud-ready-title { font-size: 1.7rem; }
-.hud-ready .hud-hint { margin-bottom: 16px; }
-.hud-ready-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 22px; margin: 8px 0; }
-.hud-feats { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.hud-feat { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(3, 12, 22, .55); }
-.hud-feat .ico { font-size: 1.4rem; filter: drop-shadow(0 0 8px rgba(0, 200, 255, .5)); }
-.hud-feat b { display: block; color: #eaf6ff; font-size: .95rem; } .hud-feat small { color: var(--muted); font-size: .76rem; }
+/* ===== 查詢前大屏主舞台（ready stage）：框 + 標題 + 左卡｜大核心｜右卡 + 免責 ===== */
+.ready-stage { width: 100%; }
+.stage-frame { position: relative; display: grid; grid-template-rows: auto 1fr auto; align-items: center; gap: 10px;
+  border-radius: 16px; padding: 26px 28px; overflow: hidden; background: linear-gradient(180deg, var(--panel-a), var(--panel-b)); }
+.stage-frame::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(0, 220, 255, .22); border-radius: 14px;
+  box-shadow: inset 0 0 40px rgba(0, 180, 255, .08), 0 0 28px rgba(0, 220, 255, .10); pointer-events: none; z-index: 0; }
+.stage-frame::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle at 50% 58%, rgba(0, 220, 255, .16), transparent 34%),
+    radial-gradient(circle at 50% 72%, rgba(40, 120, 255, .14), transparent 28%),
+    linear-gradient(180deg, rgba(0, 220, 255, .04), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, .035) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(90deg, rgba(0, 200, 255, .035) 0 1px, transparent 1px 42px); }
+.stage-header, .stage-body, .stage-disclaimer { position: relative; z-index: 1; }
+.stage-header { text-align: center; }
+.stage-title { margin: 0; font-size: 1.7rem; color: #eaf6ff; }
+.stage-hint { margin: 6px 0 0; color: #cfe6f7; }
+.stage-body { display: grid; align-items: center; justify-content: center; margin: 0 auto; min-width: 0; max-width: 980px;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) minmax(0, 220px); gap: 36px; }
+.stage-feats { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.stage-core { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.stage-core::after { content: ""; position: absolute; left: 50%; bottom: 3%; transform: translateX(-50%); width: 66%; height: 40px; z-index: 0;
+  background: radial-gradient(ellipse at center, rgba(0, 220, 255, .42), transparent 70%); filter: blur(7px); }
+.stage-core-ring { position: relative; z-index: 1; box-shadow: inset 0 0 50px rgba(0, 180, 255, .2), 0 0 70px rgba(0, 200, 255, .25); }
+.stage-disclaimer { text-align: center; color: var(--muted); font-size: .8rem; }
+/* 功能卡（左右共用）*/
+.hud-feat { display: flex; align-items: center; gap: 10px; text-align: left; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(3, 12, 22, .6); min-width: 0; }
+.hud-feat .ico { font-size: 1.5rem; filter: drop-shadow(0 0 8px rgba(0, 200, 255, .5)); flex: 0 0 auto; }
+.hud-feat b { display: block; color: #eaf6ff; font-size: .96rem; } .hud-feat small { color: var(--muted); font-size: .78rem; overflow-wrap: anywhere; }
 .hud-ring-big { width: 188px; aspect-ratio: 1; height: auto; max-width: 100%; margin: 0 auto; }
 .hud-ring-big .hud-core b { font-size: 1.15rem; } .hud-ring-big .hud-core span { font-size: .68rem; }
 
@@ -342,47 +361,45 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 
 /* 結論：桌機顯示中央版、隱藏右側版；手機相反（在 ≤980 切換）*/
 .concl-mobile { display: none; }
-.hint-m { display: none; }    /* 手機版提示文字（桌機隱藏）*/
+.mobile-query-hint { display: none; }   /* 提示併入股市快查（僅手機顯示）*/
 
-/* ===== 桌機 ≥981：ready HUD 撐滿中間第一屏（共用行為；尺寸依各斷點）===== */
+/* ===== 桌機 ≥981：ready stage 撐滿中間第一屏（ready HUD 卡透明，stage-frame 為視覺主體）===== */
 @media (min-width: 981px) {
   .dashboard-shell { min-height: calc(100vh - 44px); }
-  .center-panel { min-height: calc(100vh - 188px); overflow: hidden; }   /* 防止中欄子元素超出 */
+  .center-panel { min-height: calc(100vh - 188px); overflow: hidden; }
   .hud:not(.is-loading):not(.is-done):not(.is-error):not(.is-hidden) {
-    min-height: calc(100vh - 188px); display: flex; flex-direction: column; justify-content: center; }
-  .hud-ready { display: flex; flex-direction: column; justify-content: center; flex: 1 1 auto; gap: 10px; }
-  .hud-ready .hud-hint { font-size: 1.05rem; margin-bottom: 8px; }
-  .hud-ready-grid { align-items: center; flex: 1 1 auto; margin: 16px 0; max-width: 100%; min-width: 0; }
-  .hud-ring-big { box-shadow: inset 0 0 50px rgba(0, 180, 255, .18), 0 0 60px rgba(0, 180, 255, .22); }
-  .hud-feats { min-width: 0; } .hud-feat b, .hud-feat small { overflow-wrap: anywhere; }
-  .hud-src { font-size: .82rem; }
+    flex: 1 1 auto; display: flex; flex-direction: column; background: none; border: none; box-shadow: none; padding: 0; }
+  .hud-ready { display: flex; flex: 1 1 auto; }
+  .stage-frame { flex: 1 1 auto; width: 100%; max-width: 100%; min-width: 0; }
 }
-/* 各桌機斷點：欄寬 / 圓環 / 功能卡 等比縮放，避免 1280/1366/1440 右欄壓進中間、功能卡破版 */
+/* 各桌機斷點：核心圓環 / 功能卡 / stage 寬度 等比縮放（避免 1280/1366/1440 破版、右欄壓中間）*/
 @media (min-width: 1600px) {                          /* 超寬大屏 */
   .dashboard-shell { grid-template-columns: 330px minmax(0, 1fr) 330px; padding: 18px 30px 28px; }
   .center-panel canvas.kline { height: 520px; }
-  .hud:not(.is-loading):not(.is-done):not(.is-error):not(.is-hidden) { padding: 36px 40px; }
-  .hud-ready-grid { grid-template-columns: minmax(0, 230px) minmax(0, 1fr) minmax(0, 230px); gap: 28px; }
-  .hud-ring-big { width: 280px; } .hud-ready-title { font-size: 2.1rem; }
-  .hud-ring-big .hud-core b { font-size: 1.7rem; } .hud-ring-big .hud-core span { font-size: .92rem; }
-  .hud-feat { min-height: 84px; padding: 16px 18px; } .hud-feat .ico { font-size: 1.8rem; } .hud-feat b { font-size: 1.04rem; } .hud-feat small { font-size: .82rem; }
+  .stage-frame { min-height: calc(100vh - 160px); padding: 36px 40px; }
+  .stage-body { max-width: 1120px; gap: 48px; grid-template-columns: minmax(0, 240px) minmax(0, 1fr) minmax(0, 240px); }
+  .stage-core-ring { width: clamp(340px, 24vw, 420px); }
+  .stage-core-ring .hud-core b { font-size: 2rem; } .stage-core-ring .hud-core span { font-size: 1.05rem; }
+  .stage-title { font-size: 2.1rem; }
+  .hud-feat { padding: 16px 18px; } .hud-feat .ico { font-size: 1.9rem; } .hud-feat b { font-size: 1.06rem; } .hud-feat small { font-size: .84rem; }
 }
 @media (min-width: 1440px) and (max-width: 1599px) {  /* 標準桌機 */
-  .dashboard-shell { grid-template-columns: 280px minmax(0, 1fr) 280px; }
-  .hud:not(.is-loading):not(.is-done):not(.is-error):not(.is-hidden) { padding: 30px 32px; }
-  .hud-ready-grid { grid-template-columns: minmax(0, 190px) minmax(0, 1fr) minmax(0, 190px); gap: 22px; }
-  .hud-ring-big { width: 240px; } .hud-ready-title { font-size: 1.95rem; }
-  .hud-ring-big .hud-core b { font-size: 1.5rem; } .hud-ring-big .hud-core span { font-size: .84rem; }
-  .hud-feat { min-height: 76px; padding: 14px 16px; } .hud-feat .ico { font-size: 1.6rem; } .hud-feat b { font-size: .98rem; } .hud-feat small { font-size: .78rem; }
+  .dashboard-shell { grid-template-columns: 300px minmax(0, 1fr) 300px; }
+  .stage-frame { min-height: calc(100vh - 190px); padding: 30px 32px; }
+  .stage-body { max-width: 980px; gap: 40px; grid-template-columns: minmax(0, 220px) minmax(0, 1fr) minmax(0, 220px); }
+  .stage-core-ring { width: 300px; }
+  .stage-core-ring .hud-core b { font-size: 1.7rem; } .stage-core-ring .hud-core span { font-size: .92rem; }
+  .stage-title { font-size: 1.95rem; }
+  .hud-feat { padding: 14px 16px; } .hud-feat .ico { font-size: 1.7rem; } .hud-feat b { font-size: 1rem; } .hud-feat small { font-size: .8rem; }
 }
 @media (min-width: 981px) and (max-width: 1439px) {   /* 小桌機 / 筆電壓縮 */
   .dashboard-shell { grid-template-columns: 240px minmax(0, 1fr) 240px; gap: 14px; }
-  .hud:not(.is-loading):not(.is-done):not(.is-error):not(.is-hidden) { padding: 22px 24px; }
-  .hud-ready-grid { grid-template-columns: minmax(0, 150px) minmax(0, 1fr) minmax(0, 150px); gap: 14px; }
-  .hud-ring-big { width: 190px; } .hud-ready-title { font-size: 1.68rem; }
-  .hud-ring-big .hud-core b { font-size: 1.25rem; } .hud-ring-big .hud-core span { font-size: .72rem; }
-  .hud-feat { min-height: 58px; padding: 9px 11px; gap: 8px; }
-  .hud-feat .ico { font-size: 1.3rem; } .hud-feat b { font-size: .85rem; } .hud-feat small { font-size: .72rem; line-height: 1.4; }
+  .stage-frame { min-height: 560px; padding: 24px 26px; }
+  .stage-body { max-width: 760px; gap: 18px; grid-template-columns: minmax(0, 150px) minmax(0, 1fr) minmax(0, 150px); }
+  .stage-core-ring { width: 230px; }
+  .stage-core-ring .hud-core b { font-size: 1.4rem; } .stage-core-ring .hud-core span { font-size: .78rem; }
+  .stage-title { font-size: 1.6rem; }
+  .hud-feat { padding: 9px 11px; gap: 8px; } .hud-feat .ico { font-size: 1.3rem; } .hud-feat b { font-size: .85rem; } .hud-feat small { font-size: .72rem; line-height: 1.4; }
 }
 .query-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
 .query-row .field { margin: 0; } .query-row .grow { flex: 1 1 200px; }
@@ -453,8 +470,10 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 
 /* ===== 平板 / 手機 ≤980：單欄流程（手機專用版型，非桌機縮小） ===== */
 @media (max-width: 980px) {
-  .dashboard-shell { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px calc(180px + env(safe-area-inset-bottom)); }
-  body, .shell { padding-bottom: calc(180px + env(safe-area-inset-bottom)); }
+  html, body { min-height: 100%; overflow-x: hidden; }
+  .dashboard-shell { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px calc(220px + env(safe-area-inset-bottom)) !important; }
+  body, main, .shell { padding-bottom: calc(220px + env(safe-area-inset-bottom)) !important; }
+  .dashboard-shell > :last-child, .riskcard { margin-bottom: calc(120px + env(safe-area-inset-bottom)); }
   /* 三欄都 display:contents，讓每張卡片 / 結果容器成為可單獨排序的單欄項目 */
   .left-panel, .right-panel, .center-panel { display: contents; }
   /* 手機資訊架構（圖片 3）：持股 → 快查 → 結果 → 準備分析 → 新聞 → 黃金 → 風險 */
@@ -475,25 +494,24 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .bottom-panel { display: none !important; }
   /* 結論：手機顯示右側版（在基本/技/籌之後）、隱藏中央版 */
   .concl-desktop { display: none; } .concl-mobile { display: block; }
-  /* 提示文字：手機版改用 .hint-m */
-  .hint-d { display: none; } .hint-m { display: inline; }
   /* 卡片單欄滿版、間距一致 */
   .card, .block, .result, .news-card, .goldmini, .riskcard { width: 100%; max-width: 100%; box-sizing: border-box; }
   .tb-line { display: none; } .tb-mid { flex: 1 1 auto; }
   .center-panel canvas.kline { height: 340px; }
   .bottom-cards, .center-foot .bottom-cards { grid-template-columns: 1fr; }
-  /* 股市快查：壓縮高度（台股 / 美股上下排，按鈕 100%，不過度留白）*/
-  #query { padding: 14px; } .stock-search-grid { gap: 10px; } .stock-search-line { gap: 6px; }
-  /* HUD 查詢前：手機改成精簡提示卡（不顯示大型圓環與功能小卡，高度 110~150px）*/
-  .hud { padding: 16px 18px; min-height: 0 !important; display: block; }
-  .hud-ready { display: block; text-align: left; min-height: 110px; }
-  .hud-ready-grid, .hud-ready .hud-feats, .hud-ring-big { display: none !important; }
-  .hud-ready-title { font-size: 1.18rem; } .hud-ready .hud-hint { margin-bottom: 6px; }
-  .hud-src { text-align: left; margin-top: 8px; }
-  /* HUD 查詢中 / 完成：小圓環置中、文字置中 */
-  .hud-status { flex-direction: column; text-align: center; gap: 12px; }
-  .hud-status .hud-ring { width: 96px; height: 96px; } .hud-check { font-size: 1.9rem; }
-  .hud-status .hud-title { font-size: 1.14rem; } .hud-steps { display: inline-block; text-align: left; }
+  /* 股市快查壓縮成 App 表單：每組 gap 小、輸入框/按鈕 48px、按鈕 100%、提示併入卡底 */
+  #query { padding: 20px 22px !important; }
+  .stock-search-grid { gap: 14px; } .stock-search-line { gap: 10px; }
+  #query input, #query button { min-height: 48px; }
+  .stock-search-line button { width: 100%; }
+  .mobile-query-hint { display: block; margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+  /* 手機查詢前：不顯示獨立準備分析大卡（ready stage 隱藏）；查詢中/完成才顯示小狀態卡 */
+  .hud:not(.is-loading):not(.is-done):not(.is-error):not(.is-hidden) { display: none !important; }
+  .hud { padding: 16px 18px; min-height: 0 !important; }
+  /* HUD 查詢中 / 完成：小狀態卡（≤160px、小圓環、無大型 stage）*/
+  .hud-status { flex-direction: column; text-align: center; gap: 10px; }
+  .hud-status .hud-ring { width: 88px; height: 88px; } .hud-check { font-size: 1.8rem; }
+  .hud-status .hud-title { font-size: 1.12rem; } .hud-steps { display: inline-block; text-align: left; font-size: .9rem; }
 }
 
 /* ===== 手機 ≤720：報價 / 決策 / K線工具列 / 分數卡 微調 ===== */

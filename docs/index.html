@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260627-004" />
+  <link rel="stylesheet" href="./style.css?v=20260627-006" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -38,6 +38,7 @@
               <button id="go-us">查詢美股</button>
             </div>
           </div>
+          <p class="mobile-query-hint">輸入台股 / 美股代號或名稱即可開始分析，僅供研究與趨勢分析。</p>
           <div id="status" class="status-line"></div>
         </section>
 
@@ -72,25 +73,31 @@
       <!-- 中央：HUD 狀態面板 + 分析結果 -->
       <section class="center-panel">
         <section class="hud" id="hud">
-          <!-- 查詢前：大面板（左功能小卡 + MARKET INTELLIGENCE 核心 + 右功能小卡）-->
-          <div class="hud-ready">
-            <h3 class="hud-title hud-ready-title">準備分析</h3>
-            <p class="hud-hint"><span class="hint-d">請在左側輸入股票代號或名稱</span><span class="hint-m">輸入台股 / 美股代號或名稱即可開始分析</span></p>
-            <div class="hud-ready-grid">
-              <div class="hud-feats">
-                <div class="hud-feat"><span class="ico">📈</span><div><b>台股搜尋</b><small>多券商報價整合</small></div></div>
-                <div class="hud-feat"><span class="ico">🌐</span><div><b>美股搜尋</b><small>美股即時與歷史資料</small></div></div>
-                <div class="hud-feat"><span class="ico">🥇</span><div><b>黃金分析</b><small>國際金價與歷年走勢</small></div></div>
+          <!-- 查詢前：桌機大屏主舞台（stage：框 + 標題 + 左功能卡｜大核心｜右功能卡 + 免責；手機隱藏）-->
+          <div class="hud-ready ready-stage">
+            <div class="stage-frame">
+              <div class="stage-header">
+                <h2 class="stage-title">準備分析</h2>
+                <p class="stage-hint">請在左側輸入股票代號或名稱</p>
               </div>
-              <div class="hud-ring hud-ring-big"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div></div>
-              <div class="hud-feats">
-                <div class="hud-feat"><span class="ico">📊</span><div><b>技術面分析</b><small>均線・K線・指標</small></div></div>
-                <div class="hud-feat"><span class="ico">🏦</span><div><b>籌碼面分析</b><small>主力・投信・外資</small></div></div>
-                <div class="hud-feat"><span class="ico">💹</span><div><b>基本面分析</b><small>財報・EPS・評價</small></div></div>
-                <div class="hud-feat"><span class="ico">🎯</span><div><b>多維度評分</b><small>完整評分與風險檢視</small></div></div>
+              <div class="stage-body">
+                <div class="stage-feats stage-feats-l">
+                  <div class="hud-feat"><span class="ico">📈</span><div><b>台股搜尋</b><small>多券商報價整合</small></div></div>
+                  <div class="hud-feat"><span class="ico">🌐</span><div><b>美股搜尋</b><small>美股即時與歷史資料</small></div></div>
+                  <div class="hud-feat"><span class="ico">🥇</span><div><b>黃金分析</b><small>國際金價與歷年走勢</small></div></div>
+                </div>
+                <div class="stage-core">
+                  <div class="hud-ring hud-ring-big stage-core-ring"><div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div></div>
+                </div>
+                <div class="stage-feats stage-feats-r">
+                  <div class="hud-feat"><span class="ico">📊</span><div><b>技術面分析</b><small>均線・K線・指標</small></div></div>
+                  <div class="hud-feat"><span class="ico">🏦</span><div><b>籌碼面分析</b><small>主力・投信・外資</small></div></div>
+                  <div class="hud-feat"><span class="ico">💹</span><div><b>基本面分析</b><small>財報・EPS・評價</small></div></div>
+                  <div class="hud-feat"><span class="ico">🎯</span><div><b>多維度評分</b><small>完整評分與風險檢視</small></div></div>
+                </div>
               </div>
+              <p class="stage-disclaimer">ⓘ 僅供研究與趨勢分析，不構成投資建議。</p>
             </div>
-            <p class="hud-src">ⓘ 僅供研究與趨勢分析，不構成投資建議。</p>
           </div>
           <!-- 查詢中 / 完成 / 失敗：小面板（圓環 + 狀態文字）-->
           <div class="hud-status">
@@ -199,6 +206,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260627-004"></script>
+  <script src="./app.js?v=20260627-006"></script>
 </body>
 </html>
