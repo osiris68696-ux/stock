@@ -274,8 +274,13 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .tool-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; margin: 16px 0; }
 .tool-row .card { margin: 0; height: 100%; min-height: 250px; display: flex; flex-direction: column; }
 .tool-row .card input, .tool-row .card select, .tool-row .card button { box-sizing: border-box; }
-.tool-row #query .query-row { margin-bottom: 12px; }
 .tool-row #myholdings #holdings { margin-top: auto; }   /* 持股列表貼底，避免撐高/留白不一致 */
+
+/* 股票快查：台股 / 美股 兩列搜尋（input + 查詢按鈕） */
+.stock-search-grid { display: grid; gap: 14px; }
+.stock-search-line { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 10px; align-items: end; }
+.stock-search-line .field { margin: 0; }
+.stock-search-line button { min-height: 44px; height: 46px; }
 
 /* 開始分析按鈕：桌機不滿版、不過粗；強制深色 cyan 描邊（覆蓋任何亮藍實心） */
 #go, button#go, button.primary-lg#go {
@@ -378,6 +383,9 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .tool-row .card { width: 100%; min-height: unset; height: auto; }
   .tool-row #myholdings #holdings { margin-top: 8px; }
   #myholdings { order: 1; } #query { order: 2; }
+  /* 台股 / 美股 搜尋列：input 與按鈕各自滿版上下排 */
+  .stock-search-line { grid-template-columns: 1fr; }
+  .stock-search-line button { width: 100%; }
   /* 開始分析按鈕：手機滿版好點（仍深色描邊，非亮藍實心） */
   #go, button#go, button.primary-lg#go { width: 100%; max-width: none; min-height: 46px; background: rgba(4, 18, 32, .72) !important; background-image: none !important; }
   /* 所有主卡片一律滿版、寬度一致 */

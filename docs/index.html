@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260623-023" />
+  <link rel="stylesheet" href="./style.css?v=20260623-024" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -34,13 +34,18 @@
     <div class="tool-row">
       <section class="card main-card" id="query">
         <h2>🔎 股票快查</h2>
-        <div class="query-row">
-          <div class="field"><label>市場</label>
-            <select id="market"><option value="TW">台股</option><option value="US">美股</option></select></div>
-          <div class="field grow"><label>股票代號或名稱</label>
-            <input id="symbol" type="text" placeholder="例：2330、台積電、NVDA、輝達" maxlength="20" autocomplete="off" /></div>
+        <div class="stock-search-grid">
+          <div class="stock-search-line">
+            <div class="field"><label>台股搜尋</label>
+              <input id="tw-search" type="text" placeholder="例：2330、台積電、2887" maxlength="20" autocomplete="off" /></div>
+            <button id="go-tw">查詢台股</button>
+          </div>
+          <div class="stock-search-line">
+            <div class="field"><label>美股搜尋</label>
+              <input id="us-search" type="text" placeholder="例：NVDA、輝達、AAPL、Apple" maxlength="20" autocomplete="off" /></div>
+            <button id="go-us">查詢美股</button>
+          </div>
         </div>
-        <button id="go" class="primary-lg">開始分析</button>
         <div id="status" class="status-line"></div>
       </section>
 
@@ -112,6 +117,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260623-023"></script>
+  <script src="./app.js?v=20260623-024"></script>
 </body>
 </html>

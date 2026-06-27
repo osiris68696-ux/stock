@@ -943,7 +943,7 @@ document.querySelectorAll("[data-act]").forEach((el) => {
     const act = el.getAttribute("data-act");
     if (act === "twnews") openModal("modal-twnews");
     else if (act === "usnews") openModal("modal-usnews");
-    else if (act === "focus-symbol") { const q = $("query"); if (q) q.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => $("symbol").focus(), 320); }
+    else if (act === "focus-symbol") { const q = $("query"); if (q) q.scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => { const tw = $("tw-search"); if (tw) tw.focus(); }, 320); }
     else if (act === "focus-holdings") { const h = $("myholdings"); if (h) { h.scrollIntoView({ behavior: "smooth", block: "start" }); setTimeout(() => $("h-symbol").focus(), 320); } }
     else if (act === "gold") { openModal("modal-gold"); ensureGold(); requestAnimationFrame(() => { const cv = $("goldBody").querySelector("canvas.kline"); if (cv && cv._redraw) cv._redraw(); }); }
   };
@@ -973,14 +973,17 @@ document.querySelectorAll("[data-news]").forEach((btn) => btn.addEventListener("
     else openSearch("https://finance.yahoo.com/quote/" + encodeURIComponent(s));
   }
 }));
-$("go").addEventListener("click", () => {
-  const r = resolveSymbolInput($("symbol").value);
+// 股票快查：台股 / 美股 兩列各自查詢；alias 命中跨市場時自動切換並提示
+function runSearch(raw, preferMarket) {
+  const r = resolveSymbolInput(raw);
   if (r.error) { toast(r.error); return; }
-  if (r.market !== $("market").value) { $("market").value = r.market; toast(`已辨識為${r.market === "US" ? "美股" : "台股"} ${r.symbol}`); }
-  $("symbol").value = r.symbol;
+  if (r.market !== preferMarket) toast(`已辨識為${r.market === "US" ? "美股" : "台股"} ${r.symbol}`);
   analyze(r.symbol, r.market);
-});
-$("symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go").click(); });
+}
+$("go-tw").addEventListener("click", () => runSearch($("tw-search").value, "TW"));
+$("go-us").addEventListener("click", () => runSearch($("us-search").value, "US"));
+$("tw-search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go-tw").click(); });
+$("us-search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go-us").click(); });
 $("save").addEventListener("click", () => {
   const r = resolveSymbolInput($("h-symbol").value);
   if (r.error) { toast(r.error); return; }
