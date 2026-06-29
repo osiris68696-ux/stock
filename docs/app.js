@@ -549,9 +549,7 @@ window.addEventListener("beforeunload", stopAuto);
 function clearResult(loadingMsg) {
   stopAuto();
   $("centerResult").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
-  const lr = $("leftResult"); if (lr) lr.innerHTML = "";
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
-  const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.remove("has-result");
 }
 // 手機版（≤720px）預設收合基本面 / 技術面 / 籌碼面 / 資料來源；桌機展開
 function syncAccordion() {
@@ -607,9 +605,7 @@ async function refreshCurrent(seq, isFirst) {
     if (oldCv && oldCv._view) initView = { count: oldCv._view.count, endOffset: oldCv._barsLen - oldCv._view.end };
     const prevClose = p.lastClose;
     const R = renderResult(a, { updatedAt: nowStamp(), autoVal: p.autoVal });
-    const lr = $("leftResult"); if (lr) lr.innerHTML = R.left;
     $("centerResult").innerHTML = R.center; $("rightResult").innerHTML = R.right; $("bottomResult").innerHTML = R.bottom;
-    const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.add("has-result");   // 查詢後：隱藏靜態市場狀態 / 風險卡，啟用左欄 / 底部結果區
     p.lastClose = a.ind.close;
     const wrap = $("centerResult").querySelector(".kline-wrap");
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
@@ -631,24 +627,99 @@ function setupCurControls() {
   if (sel && CUR) { sel.value = CUR.autoVal; sel.addEventListener("change", () => { CUR.autoVal = sel.value; setGlobalAuto({ off: 0, "30": 30000, "60": 60000, "300": 300000 }[sel.value] || 0); }); }
 }
 
-// 交叉驗證提示：純前端在不新增第二資料源的前提下，做「同來源多資料集一致性檢核 + 明確的外部交叉比對提醒」，
-// 並強調不可把單一來源當唯一絕對依據（item E）。
-function crossValidation(a) {
-  const f = a.fund || {}, chip = a.chip || {};
-  const out = ["本系統以 FinMind 單一公開資料來源為主，請勿視為唯一絕對依據。"];
-  if (a.market === "TW") {
-    const got = ["股價"];
-    if (f.pe != null || f.pb != null) got.push("本益比 / 淨值比");
-    if (f.eps != null) got.push("EPS / 財報");
-    if (f.revYoy != null) got.push("月營收");
-    if (chip.ok) got.push("三大法人 / 融資券");
-    out.push(`本次已取得並交叉檢核 ${got.length} 組資料：${got.join("、")}（多組資料相互佐證，降低單一欄位誤差）。`);
-    out.push("仍建議再對照證交所（TWSE）公告與券商即時報價，避免單一來源延遲或缺漏造成誤判。");
-  } else {
-    out.push("美股目前僅取得單一價格資料，無法做多組資料交叉佐證。");
-    out.push("請務必再對照 NASDAQ / NYSE 或券商即時報價，切勿僅依本頁單一來源做決策。");
+// 對建議影響：依各面向得分比例給出正面 / 中性 / 中性偏空 / 負面
+function impactFromRatio(r) {
+  if (r == null) return { t: "資料受限", c: "imp-neu" };
+  if (r >= 0.7) return { t: "正面", c: "imp-pos" };
+  if (r >= 0.5) return { t: "中性", c: "imp-neu" };
+  if (r >= 0.3) return { t: "中性偏空", c: "imp-soft" };
+  return { t: "負面", c: "imp-neg" };
+}
+// 評分拆解：把每個面向的「分數 + 加分原因 + 扣分 / 保留原因 + 對建議影響」結構化（選股邏輯・綜合分析用）
+function scoreBreakdown(a, L) {
+  const i = a.ind || {}, f = a.fund || {}, chip = a.chip || {}, s = L.sub;
+  const rsi = i.rsi, close = i.close, ma20 = i.ma20, ma5 = i.ma5, ma10 = i.ma10, sup = i.support, res = i.resistance;
+  const aboveMa20 = ma20 != null && close != null && close >= ma20, belowMa20 = ma20 != null && close != null && close < ma20;
+  const bullStack = ma5 && ma10 && ma20 && ma5 > ma10 && ma10 > ma20, weakStack = ma5 && ma10 && ma20 && (ma5 < ma10 || ma10 < ma20);
+  const distSup = (sup && close) ? (close - sup) / sup * 100 : null, distRes = (res && close) ? (res - close) / res * 100 : null;
+  const nearSup = distSup != null && distSup >= 0 && distSup < 6, farSup = distSup != null && distSup > 10, nearRes = distRes != null && distRes >= 0 && distRes < 5;
+  const instNet = (chip.ok && chip.foreign != null) ? chip.foreign + (chip.trust || 0) + (chip.dealer || 0) : null;
+  const marginUp = chip.ok && chip.marginChg != null && chip.marginBal != null && chip.marginChg > Math.abs(chip.marginBal) * 0.03;
+  const overheated = rsi != null && rsi >= 70;
+  const ratio = (v, max) => (v == null || !max) ? null : v / max;
+  const rows = [];
+
+  // 技術面（所有類別都有）
+  { const plus = [], minus = [];
+    if (aboveMa20) plus.push("股價站上 MA20，短線趨勢未轉弱");
+    if (bullStack) plus.push("MA5 > MA10 > MA20 多頭排列");
+    if (rsi != null && rsi >= 40 && rsi <= 65) plus.push(`RSI ${fmt(rsi, 0)} 位於健康區間`);
+    if (nearSup) plus.push(`接近支撐 ${fmt(sup)}，下檔有觀察區`);
+    if (belowMa20) minus.push("股價跌破 MA20，短線結構轉弱");
+    if (weakStack && !belowMa20) minus.push("短均線排列轉弱（MA5<MA10 或 MA10<MA20）");
+    if (rsi != null && rsi >= 75) minus.push(`RSI ${fmt(rsi, 0)} 偏高、短線過熱`);
+    if (farSup) minus.push(`距支撐約 ${fmt(distSup, 0)}%，追高停損空間大`);
+    if (nearRes) minus.push("接近壓力區，易遇解套賣壓");
+    if (!plus.length) plus.push("技術面無明顯加分項");
+    if (!minus.length) minus.push("技術面無明顯破壞訊號");
+    rows.push({ label: "技術面評分", score: s.tech, max: s.techMax, plus, minus, minusLabel: "扣分原因", impact: impactFromRatio(ratio(s.tech, s.techMax)) });
   }
-  return out;
+
+  if (L.isETF) {
+    const plus = [], minus = [];
+    if (nearSup) plus.push("價格接近支撐，分批風險較低");
+    if (aboveMa20) plus.push("價格位於 MA20 上方");
+    if (nearRes) minus.push("接近壓力區，不宜一次追高");
+    if (farSup) minus.push("距支撐較遠，宜分批 / 定期定額");
+    if (!plus.length) plus.push("價格位置中性");
+    if (!minus.length) minus.push("無明顯追高風險");
+    rows.push({ label: "價格位置評分", score: s.pos, max: s.posMax, plus, minus, minusLabel: "保留原因", impact: impactFromRatio(ratio(s.pos, s.posMax)) });
+  } else {
+    // 基本面
+    const plus = [], minus = [];
+    if (L.isUS) { minus.push("美股基本面為資料源限制（非公司不佳），暫不納入完整評分"); plus.push("以價格 / 均線 / RSI 為主要判斷依據"); }
+    else {
+      if (f.pe != null && f.pe > 0 && f.pe <= 25) plus.push(`本益比 ${fmt(f.pe, 1)} 屬合理`);
+      if (f.pb != null && f.pb <= 2) plus.push(`P/B ${fmt(f.pb, 2)} 不算偏高`);
+      if (f.dy != null && f.dy >= 3) plus.push(`殖利率 ${fmt(f.dy, 2)}% 具收益性`);
+      if (f.revYoy != null && f.revYoy > 0) plus.push(`營收 YoY +${fmt(f.revYoy, 1)}% 成長`);
+      if (f.pe != null && f.pe > 30) minus.push(`本益比 ${fmt(f.pe, 1)} 偏高、估值不便宜`);
+      if (f.eps == null && f.pe == null) minus.push("基本面資料不足，無法確認獲利與估值");
+      if (!plus.length) plus.push("基本面無明顯加分項");
+      if (!minus.length) minus.push("估值中性，留意產業景氣循環");
+    }
+    rows.push({ label: "基本面評分", score: s.fund, max: s.fundMax, plus, minus, minusLabel: "保留原因", impact: impactFromRatio(ratio(s.fund, s.fundMax)) });
+
+    // 籌碼面
+    const cplus = [], cminus = [];
+    if (L.isUS) { cminus.push("美股無台股式三大法人 / 融資券，籌碼面為資料源限制"); cplus.push("以價格與量能變化間接觀察資金動向"); }
+    else if (!chip.ok) { cminus.push("三大法人 / 融資融券資料不足"); cplus.push("暫無法確認主力動向，保守處理"); }
+    else {
+      if (instNet != null && instNet > 0) cplus.push("法人偏買超，資金面支撐股價");
+      if (chip.foreign != null && chip.foreign > 0) cplus.push("外資買超");
+      if (!marginUp) cplus.push("融資未過熱，籌碼相對健康");
+      if (instNet != null && instNet < 0) cminus.push("法人偏賣超，籌碼尚未轉強");
+      if (marginUp) cminus.push("融資增加較快，留意散戶追高");
+      if (!cplus.length) cplus.push("籌碼面無明顯加分項");
+      if (!cminus.length) cminus.push("籌碼面無明顯警訊");
+    }
+    rows.push({ label: "籌碼面評分", score: s.chip, max: s.chipMax, plus: cplus, minus: cminus, minusLabel: "保留原因", impact: impactFromRatio(ratio(s.chip, s.chipMax)) });
+  }
+
+  // 風險控制（含「是否過熱 / 是否適合追高」）
+  { const plus = [], minus = [];
+    if (overheated) minus.push(`RSI ${fmt(rsi, 0)} 過熱，不適合追高`);
+    if (farSup) minus.push("距支撐較遠，停損空間大");
+    if (nearRes) minus.push("接近壓力區，套牢風險升高");
+    if (belowMa20) minus.push("跌破 MA20，趨勢轉弱");
+    if (instNet != null && instNet < 0) minus.push("法人賣超，資金面偏弱");
+    if (!minus.length) minus.push("目前無明顯追高風險");
+    plus.push((!overheated && !farSup && !nearRes) ? "價格位置相對安全、無明顯過熱" : "建議分批進場、嚴設停損以控制風險");
+    rows.push({ label: "風險控制評分", score: s.risk, max: s.riskMax, plus, minus, minusLabel: "扣分原因",
+      overheated: overheated ? "是" : "否", chase: (overheated || farSup || belowMa20) ? "不建議追高" : "可分批",
+      impact: impactFromRatio(ratio(s.risk, s.riskMax)) });
+  }
+  return rows;
 }
 
 function renderResult(a, meta) {
@@ -696,19 +767,23 @@ function renderResult(a, meta) {
   }
   const liArr = (arr) => arr.map((x) => `<li>${esc(x)}</li>`).join("");
   const subLabel = (v, max) => v != null ? `${v} / ${max}` : (L.isUS ? "資料源限制" : "資料不足");
-  // 分數拆解：小型分數卡（移除長條 progress bar）
-  const scoreChip = (label, v, max) => `<span class="score-chip"><i>${label}</i><b>${subLabel(v, max)}</b></span>`;
-  const scoreChips = L.isETF
-    ? scoreChip("技術面", L.sub.tech, L.sub.techMax) + scoreChip("價格位置", L.sub.pos, L.sub.posMax) + scoreChip("風險控制", L.sub.risk, L.sub.riskMax)
-    : scoreChip("基本面", L.sub.fund, L.sub.fundMax) + scoreChip("技術面", L.sub.tech, L.sub.techMax) + scoreChip("籌碼面", L.sub.chip, L.sub.chipMax) + scoreChip("風險控制", L.sub.risk, L.sub.riskMax);
-  const noteList = L.missing.concat(L.dataNotes);
-  // 選股邏輯（中央）：分段式分析（標的屬性 / 分數拆解 / 操作觀點）；加分 / 扣分 放底部卡
-  const selSummary = `<div class="block selection">
-      <h4>🧮 選股邏輯：${esc(L.grade)}｜${esc(L.label)}</h4>
+  // 評分拆解（結構化）：每個面向的 分數 + 加分原因 + 扣分 / 保留原因 + 對建議影響
+  const bd = scoreBreakdown(a, L);
+  const bdHTML = bd.map((r) => `<div class="sl-brow">
+        <div class="sl-bhead"><span class="sl-bname">${esc(r.label)}</span><b class="sl-bscore">${subLabel(r.score, r.max)}</b><span class="impact ${r.impact.c}">${esc(r.impact.t)}</span></div>
+        <div class="sl-bcols"><div class="sl-bplus"><i>加分原因</i><ul>${liArr(r.plus)}</ul></div><div class="sl-bminus"><i>${esc(r.minusLabel)}</i><ul>${liArr(r.minus)}</ul></div></div>
+        ${r.overheated != null ? `<div class="sl-brisk"><span>是否過熱：<b>${esc(r.overheated)}</b></span><span>是否適合追高：<b>${esc(r.chase)}</b></span></div>` : ""}
+      </div>`).join("");
+  const z = priceZones(i);
+  const passCard = `<div class="block sl-pass"><h5>🟢 支持觀察理由</h5><ul>${liArr(L.pass)}</ul></div>`;
+  const riskCard = `<div class="block sl-risk"><h5>🔴 扣分 / 風險理由</h5><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>`;
+  const zoneCard = `<div class="block sl-zone"><h5>📐 價格區間 / 進場參考</h5>${z ? `<pre class="zones">${esc(z)}</pre>` : "<p>資料不足</p>"}</div>`;
+  // 選股邏輯・綜合分析（中央）：標的屬性 + 評分拆解 + 支持/扣分/價格 三卡（為什麼這樣評分、如何影響決策）
+  const selSummary = `<div class="block selection sl-analysis">
+      <h4>🧮 選股邏輯・綜合分析　<small>${esc(L.grade)}｜${esc(L.label)}</small></h4>
       <p class="sl-meta">標的分類：<span class="cat-badge ${L.cat === "資料不足" ? "cat-na" : ""}">${esc(L.cat)}</span>　｜選股分數：<b>${L.total} / 100</b>　｜初步篩選：<b>${esc(L.screen)}</b></p>
-      <div class="sl-seg"><h5>標的屬性</h5><p>${esc(L.attr)}</p></div>
-      <div class="sl-seg"><h5>分數拆解</h5><div class="score-chips">${scoreChips}</div></div>
-      <div class="sl-seg"><h5>操作觀點</h5><p>${esc(L.conclusion)}</p></div>
+      <div class="sl-grid2"><div class="sl-attr"><h5>標的屬性</h5><p>${esc(L.attr)}</p></div><div class="sl-scores"><h5>評分拆解</h5>${bdHTML}</div></div>
+      <div class="sl-cards3">${passCard}${riskCard}${zoneCard}</div>
     </div>`;
 
   let fundamental;
@@ -748,32 +823,22 @@ function renderResult(a, meta) {
       <canvas class="kline"></canvas>
       <div class="legend"><span class="lg up">綠 漲</span><span class="lg dn">紅 跌</span><span class="lg ma5">MA5</span><span class="lg ma20">MA20</span><span class="lg sup">支撐</span><span class="lg res">壓力</span></div></div>`;
 
-  const z = priceZones(i);
-  const zones = `<div class="block"><h4>③ 價格區間 / 進場參考</h4>${z ? `<pre class="zones">${esc(z)}</pre>` : "<p>資料不足</p>"}</div>`;
-  const conclInner = `<h4>⑧ 結論</h4><p>${esc(conclusion(i, d))}</p>`;
-  const conclDesktop = `<div class="block conclusion concl-desktop">${conclInner}</div>`;   // 桌機：結論在中央
-  const conclMobile = `<div class="block conclusion concl-mobile">${conclInner}</div>`;     // 手機：結論在基本/技/籌之後
-  // 資料來源（精簡）：移除冗長說明段落，改以「資料明細 + 交叉驗證提示」整合（item D / E）
-  const srcList = [`資料來源：${esc(a.source)}`, `最新資料日期：${esc(a.lastDate)}`, `最新收盤價：${fmt(i.close)}`, `資料筆數：${a.rows} 筆`, `是否為最近交易日資料：${recent ? "是（" + lag + " 天內）" : "否（距今約 " + lag + " 天）"}`];
-  const source = `<details class="block source info-section" open><summary>資料來源與交叉驗證</summary>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}<div class="xval"><b>🔀 交叉驗證提示</b>${ul(crossValidation(a))}</div></details>`;
-  // 風險提示（查詢後動態版）：取代右欄靜態風險卡，與資料來源同放底部（item C）
-  const riskItems = ["資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。", "分析結果僅供研究，不構成投資建議。", "ETF 適合分批與長期配置，不宜用短線追價邏輯操作。", m === "TW" ? "單一資料來源可能有誤差或延遲，請與官方 / 券商報價交叉比對。" : "美股完整基本面資料有限，分析結果僅供參考；請與券商即時報價交叉比對。"];
-  const riskBottom = `<div class="block riskcard-result"><h4>⚠ 風險提示</h4><ul>${liArr(riskItems)}</ul></div>`;
+  // 操作觀點 + 結論（中央底部並排；手機版結論移到右欄）
+  const opCard = `<div class="block sl-op"><h4>🎛 操作觀點</h4><p>${esc(L.conclusion)}</p></div>`;
+  const conclDesktop = `<div class="block conclusion concl-desktop"><h4>結論</h4><p>${esc(conclusion(i, d))}</p></div>`;
+  const conclMobile = `<div class="block conclusion concl-mobile"><h4>結論</h4><p>${esc(conclusion(i, d))}</p></div>`;
+  const conclRow = `<div class="center-conclrow">${opCard}${conclDesktop}</div>`;
+  // 資料來源（精簡）：短欄位 + 一行交叉比對提醒（不做大型交叉驗證卡，item 12/13）
+  const srcList = [`資料來源：${esc(a.source)}`, `資料日期：${esc(a.lastDate)}`, `最新收盤：${fmt(i.close)}`, `資料筆數：${a.rows} 筆`];
+  const source = `<details class="block source info-section" open><summary>資料來源</summary>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以交易所或券商報價為準。</p>`}<p class="exp">提醒：單一資料來源可能有誤差或延遲，請與交易所或券商報價交叉比對。</p></details>`;
 
-  // 支持 / 扣分 / 資料說明 + 價格區間 → 移到左欄（填補桌機左側空白，item C-4）
-  const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
-    + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>`
-    + (noteList.length ? `<div class="block sl-info"><h4>ℹ️ 資料說明</h4><ul>${liArr(noteList)}</ul></div>` : "");
-  // 左欄 = 支持 / 扣分 / 價格區間（查詢後填補左側）
-  const left = `<div class="result side-result left-result">${reasonsBottom}${zones}</div>`;
-  // 中央 = 報價 / 決策 / K線 / 選股 / 結論
-  const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}`
-    + `${conclDesktop}<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
-  // 右欄 = 基本面 / 技術面 / 籌碼面（+ 手機版結論，桌機隱藏）
-  const right = `<div class="result side-result">${fundamental}${technical}${chip}${conclMobile}</div>`;
-  // 底部（與結論同區）= 資料來源 / 風險提示
-  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${source}${riskBottom}</div></div>`;
-  return { left, center, right, bottom };
+  // 中央主欄：股票主卡 → (K線 + 投資決策摘要) → 進場限制 → 選股邏輯・綜合分析 → (操作觀點 + 結論)
+  const center = `<div class="result">${header}${hold}`
+    + `<div class="center-midrow">${kline}${decision}</div>${limitBlock}${selSummary}${conclRow}`
+    + `<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
+  // 右欄：資料明細面板 = 基本面 / 技術面 / 籌碼面 / 資料來源（+ 手機版結論，桌機隱藏）
+  const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}${conclMobile}</div>`;
+  return { left: "", center, right, bottom: "" };
 }
 
 /* ===================== 黃金價格分析 ===================== */
@@ -994,9 +1059,7 @@ function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGo
 async function loadGoldCenter() {
   stopAuto(); CUR = null; SEQ++; setHudState("hide");
   $("centerResult").innerHTML = `<div class="result"><div class="muted">載入金價分析中…</div></div>`;
-  const lr = $("leftResult"); if (lr) lr.innerHTML = "";
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
-  const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.remove("has-result");
   try {
     const g = await buildGold(); g.decision = decideGold(g);
     $("centerResult").innerHTML = `<div class="result">${renderGold(g, { updatedAt: nowStamp(), autoVal: "off" })}</div>`;

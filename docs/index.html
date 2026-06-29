@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260627-009" />
+  <link rel="stylesheet" href="./style.css?v=20260627-012" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -56,9 +56,22 @@
           <div id="holdings" class="chips"></div>
         </section>
 
-        <!-- 查詢後：支持理由 / 扣分風險 / 價格區間（填補左側空白）-->
-        <div id="leftResult"></div>
+        <section class="card radar-card">
+          <h2>📡 今日市場雷達</h2>
+          <div class="radar radar2">
+            <button class="radar-cell" data-act="twnews"><b>台股</b><small>新聞 / 資訊</small></button>
+            <button class="radar-cell" data-act="usnews"><b>美股</b><small>新聞 / 資訊</small></button>
+          </div>
+        </section>
 
+        <section class="card goldmini">
+          <h2>🥇 黃金現價</h2>
+          <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
+          <button class="ghost" data-act="gold">開啟黃金分析</button>
+          <span class="gold-visual" aria-hidden="true"><i class="gbar"></i><i class="gbar"></i><i class="gbar"></i></span>
+        </section>
+
+        <!-- 新聞搜尋：桌機與「今日市場雷達」功能重疊已隱藏；手機保留為新聞 / 市場入口 -->
         <section class="card news-card">
           <h2>📰 新聞搜尋</h2>
           <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
@@ -77,20 +90,22 @@
               </div>
               <div class="orbit-dashboard">
                 <div class="orbit-core">
+                  <div class="hud-ring hud-ring-outer"></div>
+                  <div class="hud-ring hud-ring-mid"></div>
+                  <div class="hud-ring hud-ring-inner"></div>
+                  <div class="hud-ticks"></div>
+                  <div class="hud-scan"></div>
+                  <div class="hud-core-text"><strong>MARKET</strong><span>INTELLIGENCE</span></div>
                   <div class="core-platform"></div>
                   <div class="core-beam"></div>
-                  <div class="core-ring">
-                    <div class="core-scan"></div>
-                    <div class="hud-core"><b>MARKET</b><span>INTELLIGENCE</span></div>
-                  </div>
                 </div>
-                <div class="orbit-node node-tw"><span class="n-ico">📈</span><b>台股搜尋</b><small>多券商報價整合</small></div>
-                <div class="orbit-node node-us"><span class="n-ico">🌐</span><b>美股搜尋</b><small>即時與歷史資料</small></div>
-                <div class="orbit-node node-gold"><span class="n-ico">🥇</span><b>黃金分析</b><small>國際金價與歷年走勢</small></div>
-                <div class="orbit-node node-tech"><span class="n-ico">📊</span><b>技術面</b><small>均線 / K線 / 指標</small></div>
-                <div class="orbit-node node-chip"><span class="n-ico">🏦</span><b>籌碼面</b><small>主力 / 投信 / 外資</small></div>
-                <div class="orbit-node node-fund"><span class="n-ico">💹</span><b>基本面</b><small>財報 / EPS / 評價</small></div>
-                <div class="orbit-node node-score"><span class="n-ico">🎯</span><b>多維評分</b><small>完整評分與風險檢視</small></div>
+                <div class="orbit-node node-tw"><span class="n-ico">📈</span><b>台股搜尋</b><small>報價整合</small></div>
+                <div class="orbit-node node-us"><span class="n-ico">🌐</span><b>美股搜尋</b><small>即時 / 歷史</small></div>
+                <div class="orbit-node node-gold"><span class="n-ico">🥇</span><b>黃金分析</b><small>金價走勢</small></div>
+                <div class="orbit-node node-tech"><span class="n-ico">📊</span><b>技術面</b><small>均線 / K線</small></div>
+                <div class="orbit-node node-chip"><span class="n-ico">🏦</span><b>籌碼面</b><small>法人籌碼</small></div>
+                <div class="orbit-node node-fund"><span class="n-ico">💹</span><b>基本面</b><small>財報 / EPS</small></div>
+                <div class="orbit-node node-score"><span class="n-ico">🎯</span><b>多維評分</b><small>評分 / 風險</small></div>
               </div>
               <div class="stage-status-lines">
                 <div>台股 / 美股 / 黃金資料準備中</div>
@@ -122,45 +137,23 @@
         <div id="centerResult"></div>
       </section>
 
-      <!-- 右欄：市場資訊 + 查詢後摘要 -->
+      <!-- 右欄：資料明細面板（查詢後）+ 風險提示 -->
       <aside class="side-panel right-panel">
-        <section class="card goldmini">
-          <h2>🥇 黃金現價</h2>
-          <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
-          <button class="ghost" data-act="gold">開啟黃金分析</button>
-        </section>
-
-        <section class="card radar-card">
-          <h2>📡 今日市場雷達</h2>
-          <div class="radar radar2">
-            <button class="radar-cell" data-act="twnews"><b>台股</b><small>可查詢</small></button>
-            <button class="radar-cell" data-act="usnews"><b>美股</b><small>可查詢</small></button>
-          </div>
-        </section>
-
-        <!-- 查詢後：基本面 / 技術面 / 籌碼面 / 資料來源 顯示在此（風險提示之上）-->
+        <!-- 查詢後：基本面 / 技術面 / 籌碼面 / 資料來源（精簡）顯示在此 -->
         <div id="rightResult"></div>
 
         <section class="card riskcard">
           <h2>⚠ 風險提示</h2>
           <ul>
-            <li>資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</li>
+            <li>資料可能延遲，請以交易所或券商報價為準。</li>
             <li>分析結果僅供研究，不構成投資建議。</li>
-            <li>ETF 適合分批與長期配置，不宜用短線追價邏輯操作。</li>
-            <li>美股完整基本面資料有限，分析結果僅供參考。</li>
+            <li>ETF 適合分批與長期配置，不宜短線追價。</li>
+            <li>單一資料來源可能有誤差，請交叉比對。</li>
           </ul>
-        </section>
-
-        <section class="card statmini market-status-right">
-          <h2>🛰 市場狀態</h2>
-          <div class="stat-row"><span>資料來源</span><b>FinMind ・ Gold-API</b></div>
-          <div class="stat-row"><span>價格類型</span><b>最新可取得資料</b></div>
-          <div class="stat-row"><span>更新方式</span><b>手動 / 自動</b></div>
-          <div class="stat-row"><span>市場</span><b>台股 ・ 美股 ・ 黃金</b></div>
         </section>
       </aside>
 
-      <!-- 底部：支持 / 風險 / 價格（橫跨三欄） -->
+      <!-- 底部（保留容器，查詢後不再使用）-->
       <div class="bottom-panel"><div id="bottomResult"></div></div>
     </div>
   </main>
@@ -216,6 +209,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260627-009"></script>
+  <script src="./app.js?v=20260627-012"></script>
 </body>
 </html>
