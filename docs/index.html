@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260627-012" />
+  <link rel="stylesheet" href="./style.css?v=20260627-013" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -56,26 +56,6 @@
           <div id="holdings" class="chips"></div>
         </section>
 
-        <section class="card radar-card">
-          <h2>📡 今日市場雷達</h2>
-          <div class="radar radar2">
-            <button class="radar-cell" data-act="twnews"><b>台股</b><small>新聞 / 資訊</small></button>
-            <button class="radar-cell" data-act="usnews"><b>美股</b><small>新聞 / 資訊</small></button>
-          </div>
-        </section>
-
-        <section class="card goldmini">
-          <h2>🥇 黃金現價</h2>
-          <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
-          <button class="ghost" data-act="gold">開啟黃金分析</button>
-          <span class="gold-visual" aria-hidden="true"><i class="gbar"></i><i class="gbar"></i><i class="gbar"></i></span>
-        </section>
-
-        <!-- 新聞搜尋：桌機與「今日市場雷達」功能重疊已隱藏；手機保留為新聞 / 市場入口 -->
-        <section class="card news-card">
-          <h2>📰 新聞搜尋</h2>
-          <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
-        </section>
       </aside>
 
       <!-- 中央：HUD 狀態面板 + 分析結果 -->
@@ -97,7 +77,6 @@
                   <div class="hud-scan"></div>
                   <div class="hud-core-text"><strong>MARKET</strong><span>INTELLIGENCE</span></div>
                   <div class="core-platform"></div>
-                  <div class="core-beam"></div>
                 </div>
                 <div class="orbit-node node-tw"><span class="n-ico">📈</span><b>台股搜尋</b><small>報價整合</small></div>
                 <div class="orbit-node node-us"><span class="n-ico">🌐</span><b>美股搜尋</b><small>即時 / 歷史</small></div>
@@ -137,8 +116,23 @@
         <div id="centerResult"></div>
       </section>
 
-      <!-- 右欄：資料明細面板（查詢後）+ 風險提示 -->
+      <!-- 右欄：黃金現價 / 今日市場雷達 / (查詢後資料明細) / 風險提示 -->
       <aside class="side-panel right-panel">
+        <section class="card goldmini">
+          <h2>🥇 黃金現價</h2>
+          <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
+          <button class="ghost" data-act="gold">開啟黃金分析</button>
+          <span class="gold-visual" aria-hidden="true"><i class="gbar"></i><i class="gbar"></i><i class="gbar"></i></span>
+        </section>
+
+        <section class="card radar-card">
+          <h2>📡 今日市場雷達</h2>
+          <div class="radar radar2">
+            <button class="radar-cell" data-act="twnews"><b>台股</b><small>新聞 / 資訊</small></button>
+            <button class="radar-cell" data-act="usnews"><b>美股</b><small>新聞 / 資訊</small></button>
+          </div>
+        </section>
+
         <!-- 查詢後：基本面 / 技術面 / 籌碼面 / 資料來源（精簡）顯示在此 -->
         <div id="rightResult"></div>
 
@@ -150,6 +144,12 @@
             <li>ETF 適合分批與長期配置，不宜短線追價。</li>
             <li>單一資料來源可能有誤差，請交叉比對。</li>
           </ul>
+        </section>
+
+        <!-- 新聞搜尋：桌機隱藏（與今日市場雷達重疊）；手機保留為新聞 / 市場入口 -->
+        <section class="card news-card">
+          <h2>📰 新聞搜尋</h2>
+          <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
         </section>
       </aside>
 
@@ -209,6 +209,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260627-012"></script>
+  <script src="./app.js?v=20260627-013"></script>
 </body>
 </html>

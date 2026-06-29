@@ -356,8 +356,8 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   width: clamp(340px, 26vw, 460px); height: clamp(340px, 26vw, 460px); }
 .orbit-core .hud-ring { position: absolute; border-radius: 50%; pointer-events: none; }
 /* 外圈：實線 + 內側虛線，慢速順時針旋轉 */
-.hud-ring-outer { inset: 0; border: 2px solid rgba(0, 220, 255, .42);
-  box-shadow: 0 0 34px rgba(0, 220, 255, .26), inset 0 0 24px rgba(0, 220, 255, .08); animation: slowSpin 22s linear infinite; }
+.hud-ring-outer { inset: 0; border: 2px solid rgba(0, 220, 255, .45);
+  box-shadow: 0 0 34px rgba(0, 220, 255, .28); animation: slowSpin 22s linear infinite; }
 .hud-ring-outer::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .35); }
 /* 外圈斷點線（四個亮段）以 conic 疊加 */
 .hud-ring-outer::after { content: ""; position: absolute; inset: -2px; border-radius: 50%;
@@ -396,11 +396,6 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   background: radial-gradient(ellipse at center, rgba(0, 220, 255, .34), transparent 70%);
   border: 1px solid rgba(0, 220, 255, .28);
   transform: translateX(-50%) perspective(600px) rotateX(64deg); animation: platformPulse 3.2s ease-in-out infinite; }
-/* 中央光柱 */
-.core-beam { position: absolute; z-index: 0; bottom: 20%; left: 50%; transform: translateX(-50%);
-  width: clamp(110px, 10vw, 160px); height: clamp(200px, 22vw, 320px);
-  background: linear-gradient(to top, rgba(0, 220, 255, .28), rgba(0, 220, 255, .06), transparent);
-  filter: blur(2px); clip-path: polygon(42% 100%, 58% 100%, 78% 0, 22% 0); opacity: .55; pointer-events: none; }
 
 /* ===== 周圍小圓節點（HUD 層次：外環 + 旋轉微光 + dashed 內環；文字 em 跟隨斷點 font-size）===== */
 .orbit-node { position: absolute; z-index: 4; width: 118px; height: 118px; font-size: 12px; border-radius: 50%; overflow: hidden;
@@ -433,8 +428,8 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 @keyframes slowSpin { to { transform: rotate(360deg); } }
 @keyframes reverseSpin { to { transform: rotate(-360deg); } }
 @keyframes corePulse {
-  0%, 100% { filter: brightness(1); box-shadow: 0 0 38px rgba(0, 220, 255, .28), inset 0 0 42px rgba(0, 220, 255, .16); }
-  50% { filter: brightness(1.22); box-shadow: 0 0 62px rgba(0, 220, 255, .45), inset 0 0 58px rgba(0, 220, 255, .24); } }
+  0%, 100% { filter: brightness(1); opacity: .9; }
+  50% { filter: brightness(1.2); opacity: 1; } }
 @keyframes platformPulse {
   0%, 100% { opacity: .7; transform: translateX(-50%) perspective(600px) rotateX(62deg) scale(1); }
   50% { opacity: 1; transform: translateX(-50%) perspective(600px) rotateX(62deg) scale(1.05); } }
