@@ -549,7 +549,9 @@ window.addEventListener("beforeunload", stopAuto);
 function clearResult(loadingMsg) {
   stopAuto();
   $("centerResult").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
+  const lr = $("leftResult"); if (lr) lr.innerHTML = "";
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
+  const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.remove("has-result");
 }
 // 手機版（≤720px）預設收合基本面 / 技術面 / 籌碼面 / 資料來源；桌機展開
 function syncAccordion() {
@@ -605,7 +607,9 @@ async function refreshCurrent(seq, isFirst) {
     if (oldCv && oldCv._view) initView = { count: oldCv._view.count, endOffset: oldCv._barsLen - oldCv._view.end };
     const prevClose = p.lastClose;
     const R = renderResult(a, { updatedAt: nowStamp(), autoVal: p.autoVal });
+    const lr = $("leftResult"); if (lr) lr.innerHTML = R.left;
     $("centerResult").innerHTML = R.center; $("rightResult").innerHTML = R.right; $("bottomResult").innerHTML = R.bottom;
+    const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.add("has-result");   // 查詢後：隱藏靜態市場狀態 / 風險卡，啟用左欄 / 底部結果區
     p.lastClose = a.ind.close;
     const wrap = $("centerResult").querySelector(".kline-wrap");
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
@@ -625,6 +629,26 @@ function setupCurControls() {
   const btn = $("centerResult").querySelector(".upd-btn"); if (btn) btn.addEventListener("click", () => refreshCurrent(SEQ, false));
   const sel = $("centerResult").querySelector(".upd-auto");
   if (sel && CUR) { sel.value = CUR.autoVal; sel.addEventListener("change", () => { CUR.autoVal = sel.value; setGlobalAuto({ off: 0, "30": 30000, "60": 60000, "300": 300000 }[sel.value] || 0); }); }
+}
+
+// 交叉驗證提示：純前端在不新增第二資料源的前提下，做「同來源多資料集一致性檢核 + 明確的外部交叉比對提醒」，
+// 並強調不可把單一來源當唯一絕對依據（item E）。
+function crossValidation(a) {
+  const f = a.fund || {}, chip = a.chip || {};
+  const out = ["本系統以 FinMind 單一公開資料來源為主，請勿視為唯一絕對依據。"];
+  if (a.market === "TW") {
+    const got = ["股價"];
+    if (f.pe != null || f.pb != null) got.push("本益比 / 淨值比");
+    if (f.eps != null) got.push("EPS / 財報");
+    if (f.revYoy != null) got.push("月營收");
+    if (chip.ok) got.push("三大法人 / 融資券");
+    out.push(`本次已取得並交叉檢核 ${got.length} 組資料：${got.join("、")}（多組資料相互佐證，降低單一欄位誤差）。`);
+    out.push("仍建議再對照證交所（TWSE）公告與券商即時報價，避免單一來源延遲或缺漏造成誤判。");
+  } else {
+    out.push("美股目前僅取得單一價格資料，無法做多組資料交叉佐證。");
+    out.push("請務必再對照 NASDAQ / NYSE 或券商即時報價，切勿僅依本頁單一來源做決策。");
+  }
+  return out;
 }
 
 function renderResult(a, meta) {
@@ -729,22 +753,27 @@ function renderResult(a, meta) {
   const conclInner = `<h4>⑧ 結論</h4><p>${esc(conclusion(i, d))}</p>`;
   const conclDesktop = `<div class="block conclusion concl-desktop">${conclInner}</div>`;   // 桌機：結論在中央
   const conclMobile = `<div class="block conclusion concl-mobile">${conclInner}</div>`;     // 手機：結論在基本/技/籌之後
-  const srcList = [`資料來源：${esc(a.source)}`, `最新資料日期：${esc(a.lastDate)}`, `最新收盤價：${fmt(i.close)}`, `資料筆數：${a.rows} 筆`, `是否為最近交易日資料：${recent ? "是（" + lag + " 天內）" : "否（距今約 " + lag + " 天）"}`, `價格類型：${PRICE_TYPE}`];
-  const source = `<details class="block source info-section" open><summary>⑦ 資料來源與更新時間</summary>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}
-      <p class="exp">K 線圖資料來源：FinMind 股價資料；K 線為前端 Canvas 即時繪製，非圖片、非 AI 生成。</p>
-      <p class="exp">此版本為純前端版本，資料以 FinMind 為主，<b>未進行雙來源（TWSE / Yahoo / Finnhub）交叉驗證</b>。</p></details>`;
+  // 資料來源（精簡）：移除冗長說明段落，改以「資料明細 + 交叉驗證提示」整合（item D / E）
+  const srcList = [`資料來源：${esc(a.source)}`, `最新資料日期：${esc(a.lastDate)}`, `最新收盤價：${fmt(i.close)}`, `資料筆數：${a.rows} 筆`, `是否為最近交易日資料：${recent ? "是（" + lag + " 天內）" : "否（距今約 " + lag + " 天）"}`];
+  const source = `<details class="block source info-section" open><summary>資料來源與交叉驗證</summary>${ul(srcList)}${recent ? "" : `<p class="warn">⚠ 資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。</p>`}<div class="xval"><b>🔀 交叉驗證提示</b>${ul(crossValidation(a))}</div></details>`;
+  // 風險提示（查詢後動態版）：取代右欄靜態風險卡，與資料來源同放底部（item C）
+  const riskItems = ["資料可能延遲，請以證交所、NASDAQ/NYSE 或券商報價為準。", "分析結果僅供研究，不構成投資建議。", "ETF 適合分批與長期配置，不宜用短線追價邏輯操作。", m === "TW" ? "單一資料來源可能有誤差或延遲，請與官方 / 券商報價交叉比對。" : "美股完整基本面資料有限，分析結果僅供參考；請與券商即時報價交叉比對。"];
+  const riskBottom = `<div class="block riskcard-result"><h4>⚠ 風險提示</h4><ul>${liArr(riskItems)}</ul></div>`;
 
-  // 支持 / 扣分 / 資料說明 + 價格區間 → 接在選股邏輯之後（中央主分析區下方，不再放頁尾）
+  // 支持 / 扣分 / 資料說明 + 價格區間 → 移到左欄（填補桌機左側空白，item C-4）
   const reasonsBottom = `<div class="block sl-pass"><h4>🟢 支持觀察理由</h4><ul>${liArr(L.pass)}</ul></div>`
     + `<div class="block sl-risk"><h4>🔴 扣分 / 風險理由</h4><p class="sl-risknote">${esc(L.riskNote)}</p><ul>${liArr(L.risks)}</ul></div>`
     + (noteList.length ? `<div class="block sl-info"><h4>ℹ️ 資料說明</h4><ul>${liArr(noteList)}</ul></div>` : "");
-  // 中央 = 報價/決策/K線/選股 + 支持/風險/價格(3欄小卡) + 結論；右側 = 基本/技/籌/資料來源；底部不再使用
+  // 左欄 = 支持 / 扣分 / 價格區間（查詢後填補左側）
+  const left = `<div class="result side-result left-result">${reasonsBottom}${zones}</div>`;
+  // 中央 = 報價 / 決策 / K線 / 選股 / 結論
   const center = `<div class="result">${header}${hold}${decision}${limitBlock}${kline}${selSummary}`
-    + `<div class="center-foot"><div class="bottom-cards">${reasonsBottom}${zones}</div></div>`
     + `${conclDesktop}<p class="disc">以上為公開資料整理與技術指標，僅供研究，不構成投資建議。</p></div>`;
-  // 右側 = 基本面 / 技術面 / 籌碼面 / 資料來源（+ 手機版結論，桌機隱藏）
-  const right = `<div class="result side-result">${fundamental}${technical}${chip}${source}${conclMobile}</div>`;
-  return { center, right, bottom: "" };
+  // 右欄 = 基本面 / 技術面 / 籌碼面（+ 手機版結論，桌機隱藏）
+  const right = `<div class="result side-result">${fundamental}${technical}${chip}${conclMobile}</div>`;
+  // 底部（與結論同區）= 資料來源 / 風險提示
+  const bottom = `<div class="result bottom-result"><div class="bottom-cards">${source}${riskBottom}</div></div>`;
+  return { left, center, right, bottom };
 }
 
 /* ===================== 黃金價格分析 ===================== */
@@ -965,7 +994,9 @@ function ensureGold() { if (!$("goldBody").querySelector(".gold-result")) loadGo
 async function loadGoldCenter() {
   stopAuto(); CUR = null; SEQ++; setHudState("hide");
   $("centerResult").innerHTML = `<div class="result"><div class="muted">載入金價分析中…</div></div>`;
+  const lr = $("leftResult"); if (lr) lr.innerHTML = "";
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
+  const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.remove("has-result");
   try {
     const g = await buildGold(); g.decision = decideGold(g);
     $("centerResult").innerHTML = `<div class="result">${renderGold(g, { updatedAt: nowStamp(), autoVal: "off" })}</div>`;
@@ -1003,26 +1034,47 @@ document.querySelectorAll("[data-act]").forEach((el) => {
 });
 { const gl = $("goldLoad"); if (gl) gl.addEventListener("click", loadGold); }
 
-/* ---------- 新聞外部搜尋（只開外部分頁，不 fetch 新聞 API） ---------- */
+/* ---------- 新聞外部搜尋（CORS 限制下不 fetch 新聞 API；改為渲染可點擊的外部搜尋連結 + 空狀態） ---------- */
 function openSearch(url) { window.open(url, "_blank", "noopener,noreferrer"); }
 function gNews(q, lang) { return "https://news.google.com/search?q=" + encodeURIComponent(q) + "&hl=" + lang; }
+// 依市場 / 代號產生外部搜尋目標（順序對應 data-kind：news / fin / chip|analyst / yahoo）
+function newsTargets(mkt, sym) {
+  if (mkt === "tw") return [
+    ["📰 台股新聞", gNews(sym + " 台股 新聞", "zh-TW")],
+    ["📊 財報 / 基本面", gNews(sym + " 財報 基本面", "zh-TW")],
+    ["🏦 法人 / 籌碼", gNews(sym + " 外資 投信 自營商 融資 融券", "zh-TW")],
+    ["📈 Yahoo 股市", "https://tw.stock.yahoo.com/quote/" + encodeURIComponent(sym)],
+  ];
+  return [
+    ["📰 美股新聞", gNews(sym + " stock news", "en-US")],
+    ["📊 財報 / Earnings", gNews(sym + " earnings financials", "en-US")],
+    ["🎯 分析師評等", gNews(sym + " analyst rating target price", "en-US")],
+    ["📈 Yahoo Finance", "https://finance.yahoo.com/quote/" + encodeURIComponent(sym)],
+  ];
+}
+// 把搜尋連結渲染進 modal 結果區（即使彈窗被瀏覽器阻擋，使用者仍可看到並點擊連結）
+function renderNewsLinks(mkt, sym) {
+  const box = $(mkt === "tw" ? "tw-news-result" : "us-news-result"); if (!box) return;
+  const links = newsTargets(mkt, sym).map(([t, u]) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${esc(t)}</a>`).join(" ");
+  box.innerHTML = `<p class="nr-head">${esc(sym)} 的外部搜尋連結（新分頁開啟）：</p><p class="news-links">${links}</p>`
+    + `<p class="nr-note muted">新聞 / 法人消息屬外部來源，純前端版於 CORS 限制下不直接抓取新聞內容，改以可點擊連結呈現。</p>`;
+}
 document.querySelectorAll("[data-news]").forEach((btn) => btn.addEventListener("click", () => {
   const mkt = btn.getAttribute("data-news"), kind = btn.getAttribute("data-kind");
-  if (mkt === "tw") {
-    const s = $("tw-news-sym").value.trim();
-    if (!TW_RE.test(s)) { toast("請輸入有效台股代號，例如 2330、2454、2317。"); return; }
-    if (kind === "news") openSearch(gNews(s + " 台股 新聞", "zh-TW"));
-    else if (kind === "fin") openSearch(gNews(s + " 財報 基本面", "zh-TW"));
-    else if (kind === "chip") openSearch(gNews(s + " 外資 投信 自營商 融資 融券", "zh-TW"));
-    else openSearch("https://tw.stock.yahoo.com/quote/" + encodeURIComponent(s));
-  } else {
-    const s = $("us-news-sym").value.trim().toUpperCase();
-    if (!US_NEWS_RE.test(s)) { toast("請輸入有效美股代號，例如 AAPL、NVDA、MSFT。"); return; }
-    if (kind === "news") openSearch(gNews(s + " stock news", "en-US"));
-    else if (kind === "fin") openSearch(gNews(s + " earnings financials", "en-US"));
-    else if (kind === "analyst") openSearch(gNews(s + " analyst rating target price", "en-US"));
-    else openSearch("https://finance.yahoo.com/quote/" + encodeURIComponent(s));
+  const raw = (mkt === "tw" ? $("tw-news-sym").value : $("us-news-sym").value).trim();
+  const sym = mkt === "tw" ? raw : raw.toUpperCase();
+  const box = $(mkt === "tw" ? "tw-news-result" : "us-news-result");
+  const re = mkt === "tw" ? TW_RE : US_NEWS_RE;
+  if (!re.test(sym)) {
+    const msg = mkt === "tw" ? "請先輸入有效台股代號，例如 2330、2454、2317。" : "請先輸入有效美股代號，例如 AAPL、NVDA、MSFT。";
+    if (box) box.innerHTML = `<span class="muted">${esc(msg)}</span>`;
+    toast(msg); return;
   }
+  const targets = newsTargets(mkt, sym);
+  const idxMap = { news: 0, fin: 1, chip: 2, analyst: 2, yahoo: 3 };
+  const idx = idxMap[kind] == null ? 0 : idxMap[kind];
+  renderNewsLinks(mkt, sym);     // 先渲染可見連結（空狀態 / 結果都看得到）
+  openSearch(targets[idx][1]);   // 再嘗試開啟使用者點選的搜尋（被阻擋時上方連結仍可點）
 }));
 // 股票快查：台股 / 美股 兩列各自查詢；alias 命中跨市場時自動切換並提示
 function runSearch(raw, preferMarket) {
