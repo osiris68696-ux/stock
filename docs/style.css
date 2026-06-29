@@ -351,49 +351,49 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .orbit-dashboard { position: relative; display: grid; place-items: center; width: 100%; margin: 0 auto;
   max-width: 980px; min-height: clamp(360px, 30vw, 480px); }
 
-/* ===== 中央 MARKET：JARVIS 同心圓 HUD（全部以圓心對齊的細線圓環；無實心圓盤、無大扇形）===== */
+/* ===== 中央 MARKET：單一圓心的同心圓 HUD 儀表盤（所有 ring 疊在同一中心；無漂浮 / 偏移圓）===== */
 .orbit-core { position: relative; display: grid; place-items: center; z-index: 3; background: transparent;
   width: clamp(340px, 26vw, 460px); height: clamp(340px, 26vw, 460px); }
-.orbit-core .hud-ring { position: absolute; border-radius: 50%; pointer-events: none; background: transparent; }
-/* 外圈：細實線環（慢轉）+ 內側 dashed 環 + 外緣斷點段（細環）*/
-.hud-ring-outer { inset: 0; border: 1.5px solid rgba(0, 220, 255, .5); animation: slowSpin 24s linear infinite; }
-.hud-ring-outer::before { content: ""; position: absolute; inset: 6%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .32); }
-.hud-ring-outer::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(0,235,255,.9) 0 5deg, transparent 5deg 85deg, rgba(0,235,255,.9) 85deg 90deg, transparent 90deg 175deg, rgba(0,235,255,.9) 175deg 180deg, transparent 180deg 265deg, rgba(0,235,255,.9) 265deg 270deg, transparent 270deg 360deg);
-  -webkit-mask: radial-gradient(circle closest-side, transparent 93%, #000 94%, #000 99%, transparent 100%);
-  mask: radial-gradient(circle closest-side, transparent 93%, #000 94%, #000 99%, transparent 100%); }
+/* 儀表盤本體：所有 ring 都放在這裡面，以同一中心點疊合 */
+.hud-disc { position: relative; width: 100%; height: 100%; border-radius: 50%; background: transparent; }
+/* 共用：每個 ring 都以 hud-disc 的正中心對齊（left/top 50% + translate -50% -50%），旋轉繞自身中心不偏移 */
+.hud-disc .ring { position: absolute; left: 50%; top: 50%; translate: -50% -50%; transform-origin: center center;
+  border-radius: 50%; background: transparent; pointer-events: none; }
+/* 外圈：細實線環（慢轉）+ 外緣斷點亮段（細環）*/
+.ring-outer { width: 100%; height: 100%; border: 2px solid rgba(0, 220, 255, .55); box-shadow: 0 0 30px rgba(0, 220, 255, .22);
+  animation: slowSpin 24s linear infinite; }
+.ring-outer::before { content: ""; position: absolute; inset: -2px; border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(0,235,255,.9) 0 5deg, transparent 5deg 88deg, rgba(0,235,255,.9) 88deg 92deg, transparent 92deg 178deg, rgba(0,235,255,.9) 178deg 182deg, transparent 182deg 268deg, rgba(0,235,255,.9) 268deg 272deg, transparent 272deg 360deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 94%, #000 95%, #000 100%);
+  mask: radial-gradient(circle closest-side, transparent 94%, #000 95%, #000 100%); }
+/* 虛線環（反轉）*/
+.ring-dashed { width: 82%; height: 82%; border: 1px dashed rgba(0, 220, 255, .45); animation: reverseSpin 30s linear infinite; }
 /* 小刻度 blocks（細環，慢轉）*/
-.hud-ticks { position: absolute; inset: 13%; border-radius: 50%; pointer-events: none;
-  background: repeating-conic-gradient(rgba(0, 220, 255, .55) 0 1.2deg, transparent 1.2deg 6deg);
-  -webkit-mask: radial-gradient(circle closest-side, transparent 82%, #000 84%, #000 93%, transparent 95%);
-  mask: radial-gradient(circle closest-side, transparent 82%, #000 84%, #000 93%, transparent 95%);
-  animation: slowSpin 46s linear infinite; }
-/* 中圈：細實線環（反轉）+ 薄 conic 區段 + 內側 dashed */
-.hud-ring-mid { inset: 22%; border: 1px solid rgba(0, 220, 255, .32); animation: reverseSpin 20s linear infinite; }
-.hud-ring-mid::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(0,220,255,.6) 0 14deg, transparent 14deg 60deg, rgba(120,110,255,.5) 60deg 74deg, transparent 74deg 360deg);
-  -webkit-mask: radial-gradient(circle closest-side, transparent 86%, #000 88%, #000 98%, transparent 100%);
-  mask: radial-gradient(circle closest-side, transparent 86%, #000 88%, #000 98%, transparent 100%); }
-.hud-ring-mid::after { content: ""; position: absolute; inset: 14%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .4); }
-/* 內圈：細實線環（正轉）+ 最內細環（環繞文字）*/
-.hud-ring-inner { inset: 30%; border: 1px solid rgba(0, 220, 255, .34); box-shadow: inset 0 0 16px rgba(0, 220, 255, .08); animation: slowSpin 30s linear infinite; }
-.hud-ring-inner::before { content: ""; position: absolute; inset: 16%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .3); }
-/* 掃描光：僅細環上的一道亮弧（非大扇形）*/
-.hud-scan { position: absolute; inset: 5%; border-radius: 50%; pointer-events: none; z-index: 1; opacity: .85;
-  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 240, 255, .6) 24deg, transparent 58deg, transparent 360deg);
-  -webkit-mask: radial-gradient(circle closest-side, transparent 80%, #000 82%, #000 90%, transparent 92%);
-  mask: radial-gradient(circle closest-side, transparent 80%, #000 82%, #000 90%, transparent 92%);
-  animation: slowSpin 7s linear infinite; }
-/* 中央文字（透明深色、不填滿）*/
-.hud-core-text { position: relative; z-index: 4; text-align: center; letter-spacing: .18em; color: #dffaff;
-  text-shadow: 0 0 18px rgba(0, 220, 255, .85); animation: corePulse 3.8s ease-in-out infinite; }
+.ring-ticks { width: 94%; height: 94%;
+  background: repeating-conic-gradient(rgba(0, 220, 255, .75) 0deg 1.4deg, transparent 1.4deg 7deg);
+  -webkit-mask: radial-gradient(circle, transparent 66%, #000 68%, #000 72%, transparent 74%);
+  mask: radial-gradient(circle, transparent 66%, #000 68%, #000 72%, transparent 74%);
+  animation: slowSpin 36s linear infinite; }
+/* 掃描光：同一圓內細環上的一道亮弧（非大扇形）*/
+.ring-scan { width: 90%; height: 90%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 240, 255, .55) 26deg, transparent 58deg, transparent 360deg);
+  -webkit-mask: radial-gradient(circle, transparent 56%, #000 58%, #000 64%, transparent 66%);
+  mask: radial-gradient(circle, transparent 56%, #000 58%, #000 64%, transparent 66%);
+  animation: slowSpin 8s linear infinite; }
+/* 內圈：細實線環（反轉）+ 最內側細虛線環（環繞文字）*/
+.ring-inner { width: 54%; height: 54%; border: 1px solid rgba(0, 220, 255, .34); box-shadow: inset 0 0 22px rgba(0, 220, 255, .1);
+  animation: reverseSpin 26s linear infinite; }
+.ring-inner::before { content: ""; position: absolute; inset: 18%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .3); }
+/* 中央文字（圓心、透明深色、不填滿）*/
+.hud-core-text { position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 5; text-align: center; letter-spacing: .18em;
+  color: #dffaff; text-shadow: 0 0 18px rgba(0, 220, 255, .85); animation: corePulse 3.8s ease-in-out infinite; }
 .hud-core-text strong { display: block; font-size: clamp(26px, 1.9vw, 40px); font-weight: 800; }
 .hud-core-text span { display: block; font-size: clamp(11px, .8vw, 15px); letter-spacing: .3em; opacity: .8; }
-/* 底部淡淡透視光圈（細、低調，非實心罩）*/
-.core-platform { position: absolute; z-index: 0; bottom: 5%; left: 50%;
-  width: clamp(240px, 20vw, 400px); height: clamp(46px, 4vw, 82px); border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(0, 220, 255, .16), transparent 72%);
-  border: 1px solid rgba(0, 220, 255, .22);
+/* 底部淡淡透視光圈（細、低調，非實心罩；與主圓同中心）*/
+.core-platform { position: absolute; z-index: 0; bottom: 4%; left: 50%;
+  width: clamp(230px, 19vw, 380px); height: clamp(44px, 4vw, 78px); border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 220, 255, .14), transparent 72%);
+  border: 1px solid rgba(0, 220, 255, .2);
   transform: translateX(-50%) perspective(600px) rotateX(64deg); animation: platformPulse 3.4s ease-in-out infinite; }
 
 /* ===== 周圍小圓節點（HUD 層次：外環 + 旋轉微光 + dashed 內環；文字 em 跟隨斷點 font-size）===== */
@@ -433,7 +433,7 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   0%, 100% { opacity: .7; transform: translateX(-50%) perspective(600px) rotateX(62deg) scale(1); }
   50% { opacity: 1; transform: translateX(-50%) perspective(600px) rotateX(62deg) scale(1.05); } }
 @media (prefers-reduced-motion: reduce) {
-  .hud-ring, .hud-ticks, .hud-scan, .core-platform, .hud-core-text, .orbit-node::after { animation: none; } }
+  .hud-disc .ring, .core-platform, .hud-core-text, .orbit-node::after { animation: none; } }
 
 /* 查詢中 / 完成 / 失敗小面板：圓環左 + 文字右 */
 .hud-status { display: none; align-items: center; gap: 24px; }
