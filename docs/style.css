@@ -330,9 +330,9 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .stage-frame { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: clamp(8px, 2.2vh, 22px); border-radius: 16px; padding: 24px 28px; overflow: hidden;
   background:
-    radial-gradient(circle at 50% 50%, rgba(0, 220, 255, .18), transparent 32%),
-    radial-gradient(circle at 50% 70%, rgba(0, 120, 255, .18), transparent 34%),
-    linear-gradient(180deg, rgba(0, 35, 65, .70), rgba(0, 12, 24, .92)); }
+    radial-gradient(circle at 50% 48%, rgba(0, 220, 255, .06), transparent 26%),
+    radial-gradient(circle at 50% 78%, rgba(0, 120, 255, .10), transparent 30%),
+    linear-gradient(180deg, rgba(0, 30, 58, .72), rgba(0, 12, 24, .94)); }
 .stage-frame::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(0, 220, 255, .28); border-radius: 14px;
   box-shadow: inset 0 0 52px rgba(0, 220, 255, .10), 0 0 28px rgba(0, 220, 255, .12); pointer-events: none; z-index: 0; }
 .stage-frame::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
@@ -351,51 +351,50 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
 .orbit-dashboard { position: relative; display: grid; place-items: center; width: 100%; margin: 0 auto;
   max-width: 980px; min-height: clamp(360px, 30vw, 480px); }
 
-/* ===== 中央主圓：JARVIS / HUD 多層圓環儀表（透明、非發光球；純 CSS 動畫）===== */
-.orbit-core { position: relative; display: grid; place-items: center; z-index: 3;
+/* ===== 中央 MARKET：JARVIS 同心圓 HUD（全部以圓心對齊的細線圓環；無實心圓盤、無大扇形）===== */
+.orbit-core { position: relative; display: grid; place-items: center; z-index: 3; background: transparent;
   width: clamp(340px, 26vw, 460px); height: clamp(340px, 26vw, 460px); }
-.orbit-core .hud-ring { position: absolute; border-radius: 50%; pointer-events: none; }
-/* 外圈：實線 + 內側虛線，慢速順時針旋轉 */
-.hud-ring-outer { inset: 0; border: 2px solid rgba(0, 220, 255, .45);
-  box-shadow: 0 0 34px rgba(0, 220, 255, .28); animation: slowSpin 22s linear infinite; }
-.hud-ring-outer::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .35); }
-/* 外圈斷點線（四個亮段）以 conic 疊加 */
-.hud-ring-outer::after { content: ""; position: absolute; inset: -2px; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(0,235,255,.7) 0 6deg, transparent 6deg 84deg, rgba(0,235,255,.7) 84deg 90deg, transparent 90deg 174deg, rgba(0,235,255,.7) 174deg 180deg, transparent 180deg 264deg, rgba(0,235,255,.7) 264deg 270deg, transparent 270deg 360deg);
-  -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%, #000 65%, transparent 66%);
-  mask: radial-gradient(circle, transparent 60%, #000 61%, #000 65%, transparent 66%); }
-/* 中圈：conic 區段（多色刻度感），反向旋轉，遮罩成細環 */
-.hud-ring-mid { inset: 38px; border: 1px solid rgba(0, 220, 255, .26);
-  background: conic-gradient(from 0deg, rgba(0,220,255,.75) 0deg 18deg, transparent 18deg 48deg, rgba(120,110,255,.55) 48deg 62deg, transparent 62deg 360deg);
-  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%, #000 66%, transparent 68%);
-  mask: radial-gradient(circle, transparent 58%, #000 60%, #000 66%, transparent 68%);
-  animation: reverseSpin 18s linear infinite; }
-/* 內圈：dashed ring + 內陰影，正向慢轉 */
-.hud-ring-inner { inset: clamp(70px, 7vw, 92px); border: 1px dashed rgba(0, 220, 255, .4);
-  box-shadow: inset 0 0 26px rgba(0, 220, 255, .12); animation: slowSpin 28s linear infinite; }
-/* 小刻度 blocks（細環上的等分短線）*/
-.hud-ticks { position: absolute; inset: 26px; border-radius: 50%; pointer-events: none;
-  background: repeating-conic-gradient(rgba(0, 220, 255, .5) 0 1.3deg, transparent 1.3deg 7deg);
-  -webkit-mask: radial-gradient(circle, transparent 70%, #000 72%, #000 77%, transparent 79%);
-  mask: radial-gradient(circle, transparent 70%, #000 72%, #000 77%, transparent 79%);
-  animation: slowSpin 40s linear infinite; }
-/* 掃描光：conic 高亮旋轉掃描，遮罩成中段環 */
-.hud-scan { position: absolute; inset: 8px; border-radius: 50%; pointer-events: none; opacity: .8; z-index: 1;
-  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 240, 255, .5) 28deg, transparent 70deg, transparent 360deg);
-  -webkit-mask: radial-gradient(circle, transparent 40%, #000 44%, #000 72%, transparent 75%);
-  mask: radial-gradient(circle, transparent 40%, #000 44%, #000 72%, transparent 75%);
+.orbit-core .hud-ring { position: absolute; border-radius: 50%; pointer-events: none; background: transparent; }
+/* 外圈：細實線環（慢轉）+ 內側 dashed 環 + 外緣斷點段（細環）*/
+.hud-ring-outer { inset: 0; border: 1.5px solid rgba(0, 220, 255, .5); animation: slowSpin 24s linear infinite; }
+.hud-ring-outer::before { content: ""; position: absolute; inset: 6%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .32); }
+.hud-ring-outer::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(0,235,255,.9) 0 5deg, transparent 5deg 85deg, rgba(0,235,255,.9) 85deg 90deg, transparent 90deg 175deg, rgba(0,235,255,.9) 175deg 180deg, transparent 180deg 265deg, rgba(0,235,255,.9) 265deg 270deg, transparent 270deg 360deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 93%, #000 94%, #000 99%, transparent 100%);
+  mask: radial-gradient(circle closest-side, transparent 93%, #000 94%, #000 99%, transparent 100%); }
+/* 小刻度 blocks（細環，慢轉）*/
+.hud-ticks { position: absolute; inset: 13%; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(rgba(0, 220, 255, .55) 0 1.2deg, transparent 1.2deg 6deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 82%, #000 84%, #000 93%, transparent 95%);
+  mask: radial-gradient(circle closest-side, transparent 82%, #000 84%, #000 93%, transparent 95%);
+  animation: slowSpin 46s linear infinite; }
+/* 中圈：細實線環（反轉）+ 薄 conic 區段 + 內側 dashed */
+.hud-ring-mid { inset: 22%; border: 1px solid rgba(0, 220, 255, .32); animation: reverseSpin 20s linear infinite; }
+.hud-ring-mid::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(0,220,255,.6) 0 14deg, transparent 14deg 60deg, rgba(120,110,255,.5) 60deg 74deg, transparent 74deg 360deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 86%, #000 88%, #000 98%, transparent 100%);
+  mask: radial-gradient(circle closest-side, transparent 86%, #000 88%, #000 98%, transparent 100%); }
+.hud-ring-mid::after { content: ""; position: absolute; inset: 14%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .4); }
+/* 內圈：細實線環（正轉）+ 最內細環（環繞文字）*/
+.hud-ring-inner { inset: 30%; border: 1px solid rgba(0, 220, 255, .34); box-shadow: inset 0 0 16px rgba(0, 220, 255, .08); animation: slowSpin 30s linear infinite; }
+.hud-ring-inner::before { content: ""; position: absolute; inset: 16%; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .3); }
+/* 掃描光：僅細環上的一道亮弧（非大扇形）*/
+.hud-scan { position: absolute; inset: 5%; border-radius: 50%; pointer-events: none; z-index: 1; opacity: .85;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 240, 255, .6) 24deg, transparent 58deg, transparent 360deg);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 80%, #000 82%, #000 90%, transparent 92%);
+  mask: radial-gradient(circle closest-side, transparent 80%, #000 82%, #000 90%, transparent 92%);
   animation: slowSpin 7s linear infinite; }
-/* 中央文字（深色透明背景、不填滿漸層球）*/
+/* 中央文字（透明深色、不填滿）*/
 .hud-core-text { position: relative; z-index: 4; text-align: center; letter-spacing: .18em; color: #dffaff;
   text-shadow: 0 0 18px rgba(0, 220, 255, .85); animation: corePulse 3.8s ease-in-out infinite; }
-.hud-core-text strong { display: block; font-size: clamp(28px, 2vw, 42px); font-weight: 800; }
+.hud-core-text strong { display: block; font-size: clamp(26px, 1.9vw, 40px); font-weight: 800; }
 .hud-core-text span { display: block; font-size: clamp(11px, .8vw, 15px); letter-spacing: .3em; opacity: .8; }
-/* 底座透視光圈（持續微亮呼吸） */
-.core-platform { position: absolute; z-index: 1; bottom: 4%; left: 50%;
-  width: clamp(280px, 22vw, 460px); height: clamp(64px, 5.5vw, 110px); border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(0, 220, 255, .34), transparent 70%);
-  border: 1px solid rgba(0, 220, 255, .28);
-  transform: translateX(-50%) perspective(600px) rotateX(64deg); animation: platformPulse 3.2s ease-in-out infinite; }
+/* 底部淡淡透視光圈（細、低調，非實心罩）*/
+.core-platform { position: absolute; z-index: 0; bottom: 5%; left: 50%;
+  width: clamp(240px, 20vw, 400px); height: clamp(46px, 4vw, 82px); border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 220, 255, .16), transparent 72%);
+  border: 1px solid rgba(0, 220, 255, .22);
+  transform: translateX(-50%) perspective(600px) rotateX(64deg); animation: platformPulse 3.4s ease-in-out infinite; }
 
 /* ===== 周圍小圓節點（HUD 層次：外環 + 旋轉微光 + dashed 內環；文字 em 跟隨斷點 font-size）===== */
 .orbit-node { position: absolute; z-index: 4; width: 118px; height: 118px; font-size: 12px; border-radius: 50%; overflow: hidden;
