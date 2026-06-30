@@ -1157,15 +1157,16 @@ $("us-search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go
 // 手機版 segmented 查詢：台股 / 美股 tab 切換 placeholder，「開始分析」沿用同一 runSearch（不改查詢邏輯）
 (function () {
   const mSearch = $("m-search"), mGo = $("m-go");
-  let mMarket = "TW";
+  let mMarket = "TW";   // TW / US / ETF（ETF 仍走台股查詢，analyze 內部自動歸類 ETF）
   document.querySelectorAll(".seg-tab").forEach((t) => t.addEventListener("click", () => {
     document.querySelectorAll(".seg-tab").forEach((x) => x.classList.remove("is-active"));
     t.classList.add("is-active");
-    mMarket = t.getAttribute("data-mkt") === "US" ? "US" : "TW";
-    if (mSearch) mSearch.placeholder = mMarket === "US" ? "例：NVDA、AAPL、Apple" : "例：2330、台積電、2887";
+    mMarket = t.getAttribute("data-mkt") || "TW";
+    if (mSearch) mSearch.placeholder = mMarket === "US" ? "例：NVDA、AAPL、Apple"
+      : mMarket === "ETF" ? "例：0050、006208、00878" : "例：2330、台積電、2887";
   }));
   if (mGo && mSearch) {
-    mGo.addEventListener("click", () => runSearch(mSearch.value, mMarket));
+    mGo.addEventListener("click", () => runSearch(mSearch.value, mMarket === "US" ? "US" : "TW"));
     mSearch.addEventListener("keydown", (e) => { if (e.key === "Enter") mGo.click(); });
   }
 })();

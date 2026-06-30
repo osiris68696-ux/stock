@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260627-017" />
+  <link rel="stylesheet" href="./style.css?v=20260627-018" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -31,8 +31,9 @@
             <div class="seg-tabs" role="tablist">
               <button type="button" class="seg-tab is-active" data-mkt="TW">台股</button>
               <button type="button" class="seg-tab" data-mkt="US">美股</button>
+              <button type="button" class="seg-tab" data-mkt="ETF">ETF</button>
             </div>
-            <input id="m-search" type="text" placeholder="例：2330、台積電、2887" maxlength="20" autocomplete="off" />
+            <input id="m-search" type="text" placeholder="輸入股票代號或名稱" maxlength="20" autocomplete="off" />
             <button id="m-go" type="button">開始分析</button>
           </div>
           <!-- 桌機版：台股 / 美股 兩組輸入框（手機隱藏）-->
@@ -137,12 +138,21 @@
 
       <!-- 右欄：黃金現價 / 今日市場雷達 / (查詢後資料明細) / 風險提示 -->
       <aside class="side-panel right-panel">
-        <section class="card goldmini">
-          <h2>🥇 黃金現價</h2>
-          <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
-          <button class="ghost" data-act="gold">開啟黃金分析</button>
-          <span class="gold-visual" aria-hidden="true"><i class="gbar"></i><i class="gbar"></i><i class="gbar"></i></span>
-        </section>
+        <!-- 輔助工具：手機 2 欄（黃金現價 + 新聞搜尋）；桌機 display:contents（黃金照常顯示、新聞隱藏）-->
+        <div class="aux-tools">
+          <h3 class="aux-title">輔助工具</h3>
+          <section class="card goldmini">
+            <h2>🥇 黃金現價</h2>
+            <div id="goldMiniBody"><span class="muted">點下方開啟即時金價分析</span></div>
+            <button class="ghost" data-act="gold">開啟黃金分析</button>
+            <span class="gold-visual" aria-hidden="true"><i class="gbar"></i><i class="gbar"></i><i class="gbar"></i></span>
+          </section>
+          <section class="card news-card aux-card" data-act="twnews" role="button" tabindex="0">
+            <span class="aux-ico" aria-hidden="true">📰</span>
+            <b>新聞搜尋</b>
+            <small>關鍵觀點</small>
+          </section>
+        </div>
 
         <section class="card radar-card">
           <h2>📡 今日市場雷達</h2>
@@ -164,12 +174,6 @@
             <li>單一資料來源可能有誤差，請交叉比對。</li>
           </ul>
         </details>
-
-        <!-- 新聞搜尋：桌機隱藏（與今日市場雷達重疊）；手機保留為新聞 / 市場入口 -->
-        <section class="card news-card">
-          <h2>📰 新聞搜尋</h2>
-          <div class="row"><button class="ghost" data-act="twnews">台股相關新聞</button><button class="ghost" data-act="usnews">美股相關新聞</button></div>
-        </section>
       </aside>
 
       <!-- 手機版查詢後分隔：股票分析結束、以下為延伸工具（桌機隱藏）-->
@@ -234,6 +238,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260627-017"></script>
+  <script src="./app.js?v=20260627-018"></script>
 </body>
 </html>
