@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>台美股・黃金智慧分析</title>
   <meta name="description" content="台美股與黃金價格追蹤：股票 × 黃金 × 技術面 × 籌碼面，投資決策輔助工具。僅供研究，不構成投資建議。" />
-  <link rel="stylesheet" href="./style.css?v=20260627-016" />
+  <link rel="stylesheet" href="./style.css?v=20260627-017" />
 </head>
 <body>
   <header class="appbar"><div class="appbar-inner"><span class="brand">📈 台美股・黃金智慧分析</span></div></header>
@@ -26,6 +26,16 @@
       <aside class="side-panel left-panel">
         <section class="card" id="query">
           <h2>🔎 股市快查</h2>
+          <!-- 手機版：segmented tabs（台股 / 美股）+ 單一輸入 + 開始分析（桌機隱藏，沿用同一查詢邏輯）-->
+          <div class="mobile-search">
+            <div class="seg-tabs" role="tablist">
+              <button type="button" class="seg-tab is-active" data-mkt="TW">台股</button>
+              <button type="button" class="seg-tab" data-mkt="US">美股</button>
+            </div>
+            <input id="m-search" type="text" placeholder="例：2330、台積電、2887" maxlength="20" autocomplete="off" />
+            <button id="m-go" type="button">開始分析</button>
+          </div>
+          <!-- 桌機版：台股 / 美股 兩組輸入框（手機隱藏）-->
           <div class="stock-search-grid">
             <div class="stock-search-line">
               <div class="field"><label>台股搜尋</label>
@@ -44,15 +54,22 @@
 
         <section class="card" id="myholdings">
           <h2>💼 我的持股</h2>
-          <div class="row">
-            <select id="h-market"><option value="TW">台股</option><option value="US">美股</option></select>
-            <input id="h-symbol" type="text" placeholder="代號 / 名稱" maxlength="20" autocomplete="off" />
+          <!-- 手機版無持股時的精簡空狀態（桌機隱藏；點按鈕展開完整表單）-->
+          <div class="holdings-empty-cta">
+            <p class="he-hint">尚未加入持股，加入後可快速查看現價、損益與診斷。</p>
+            <button type="button" id="holdings-add" class="ghost">＋ 加入持股</button>
           </div>
-          <div class="row">
-            <input id="cost" type="number" step="any" min="0" placeholder="成本" />
-            <input id="qty" type="number" step="any" min="0" placeholder="股數" />
+          <div class="holdings-form">
+            <div class="row">
+              <select id="h-market"><option value="TW">台股</option><option value="US">美股</option></select>
+              <input id="h-symbol" type="text" placeholder="代號 / 名稱" maxlength="20" autocomplete="off" />
+            </div>
+            <div class="row">
+              <input id="cost" type="number" step="any" min="0" placeholder="成本" />
+              <input id="qty" type="number" step="any" min="0" placeholder="股數" />
+            </div>
+            <div class="row"><button id="save" class="ghost">加入持股</button><button id="analyzeAll" class="ghost">持股診斷</button><button id="clearAll" class="ghost danger">清空</button></div>
           </div>
-          <div class="row"><button id="save" class="ghost">加入持股</button><button id="analyzeAll" class="ghost">持股診斷</button><button id="clearAll" class="ghost danger">清空</button></div>
           <div id="holdings" class="chips"></div>
         </section>
 
@@ -138,15 +155,15 @@
         <!-- 查詢後：基本面 / 技術面 / 籌碼面 / 資料來源（精簡）顯示在此 -->
         <div id="rightResult"></div>
 
-        <section class="card riskcard">
-          <h2>⚠ 風險提示</h2>
+        <details class="card riskcard" id="riskcard">
+          <summary class="rc-summary"><span class="rc-title">⚠ 風險提示</span></summary>
           <ul>
             <li>資料可能延遲，請以交易所或券商報價為準。</li>
             <li>分析結果僅供研究，不構成投資建議。</li>
             <li>ETF 適合分批與長期配置，不宜短線追價。</li>
             <li>單一資料來源可能有誤差，請交叉比對。</li>
           </ul>
-        </section>
+        </details>
 
         <!-- 新聞搜尋：桌機隱藏（與今日市場雷達重疊）；手機保留為新聞 / 市場入口 -->
         <section class="card news-card">
@@ -155,8 +172,14 @@
         </section>
       </aside>
 
+      <!-- 手機版查詢後分隔：股票分析結束、以下為延伸工具（桌機隱藏）-->
+      <div class="mobile-section-divider" aria-hidden="true"><span>延伸資訊</span></div>
+
       <!-- 底部（保留容器，查詢後不再使用）-->
       <div class="bottom-panel"><div id="bottomResult"></div></div>
+
+      <!-- 手機版底部 safe-area spacer（桌機隱藏）-->
+      <div class="mobile-bottom-spacer" aria-hidden="true"></div>
     </div>
   </main>
 
@@ -211,6 +234,6 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20260627-016"></script>
+  <script src="./app.js?v=20260627-017"></script>
 </body>
 </html>

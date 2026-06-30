@@ -58,6 +58,7 @@ function getHoldings() { try { return JSON.parse(localStorage.getItem(LS_KEY)) |
 function setHoldings(list) { localStorage.setItem(LS_KEY, JSON.stringify(list)); renderHoldings(); }
 function renderHoldings() {
   const box = $("holdings"); const list = getHoldings(); box.innerHTML = "";
+  const mh = $("myholdings"); if (mh) mh.classList.toggle("has-holdings", list.length > 0);   // 手機空狀態切換（桌機 CSS 不理會）
   if (!list.length) { box.innerHTML = '<span class="muted">尚未加入任何持股</span>'; return; }
   list.forEach((h) => {
     const chip = document.createElement("span"); chip.className = "chip";
@@ -550,6 +551,7 @@ function clearResult(loadingMsg) {
   stopAuto();
   $("centerResult").innerHTML = loadingMsg ? `<div class="result"><div class="muted">${esc(loadingMsg)}</div></div>` : "";
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
+  const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.remove("has-result");
 }
 // 手機版（≤720px）預設收合基本面 / 技術面 / 籌碼面 / 資料來源；桌機展開
 function syncAccordion() {
@@ -606,6 +608,7 @@ async function refreshCurrent(seq, isFirst) {
     const prevClose = p.lastClose;
     const R = renderResult(a, { updatedAt: nowStamp(), autoVal: p.autoVal });
     $("centerResult").innerHTML = R.center; $("rightResult").innerHTML = R.right; $("bottomResult").innerHTML = R.bottom;
+    const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.add("has-result");   // 手機版「延伸資訊」分隔（桌機 CSS 不理會）
     p.lastClose = a.ind.close;
     const wrap = $("centerResult").querySelector(".kline-wrap");
     if (wrap) setupKline(wrap, a.bars, a.ind.support, a.ind.resistance, initView);
@@ -1060,6 +1063,7 @@ async function loadGoldCenter() {
   stopAuto(); CUR = null; SEQ++; setHudState("hide");
   $("centerResult").innerHTML = `<div class="result"><div class="muted">載入金價分析中…</div></div>`;
   $("rightResult").innerHTML = ""; $("bottomResult").innerHTML = "";
+  const shell = document.querySelector(".dashboard-shell"); if (shell) shell.classList.remove("has-result");
   try {
     const g = await buildGold(); g.decision = decideGold(g);
     $("centerResult").innerHTML = `<div class="result">${renderGold(g, { updatedAt: nowStamp(), autoVal: "off" })}</div>`;
@@ -1150,6 +1154,23 @@ $("go-tw").addEventListener("click", () => runSearch($("tw-search").value, "TW")
 $("go-us").addEventListener("click", () => runSearch($("us-search").value, "US"));
 $("tw-search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go-tw").click(); });
 $("us-search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go-us").click(); });
+// 手機版 segmented 查詢：台股 / 美股 tab 切換 placeholder，「開始分析」沿用同一 runSearch（不改查詢邏輯）
+(function () {
+  const mSearch = $("m-search"), mGo = $("m-go");
+  let mMarket = "TW";
+  document.querySelectorAll(".seg-tab").forEach((t) => t.addEventListener("click", () => {
+    document.querySelectorAll(".seg-tab").forEach((x) => x.classList.remove("is-active"));
+    t.classList.add("is-active");
+    mMarket = t.getAttribute("data-mkt") === "US" ? "US" : "TW";
+    if (mSearch) mSearch.placeholder = mMarket === "US" ? "例：NVDA、AAPL、Apple" : "例：2330、台積電、2887";
+  }));
+  if (mGo && mSearch) {
+    mGo.addEventListener("click", () => runSearch(mSearch.value, mMarket));
+    mSearch.addEventListener("keydown", (e) => { if (e.key === "Enter") mGo.click(); });
+  }
+})();
+// 手機版「我的持股」空狀態：點「＋ 加入持股」展開完整表單（桌機本來就顯示完整表單）
+{ const ha = $("holdings-add"); if (ha) ha.addEventListener("click", () => { const mh = $("myholdings"); if (mh) mh.classList.add("holdings-expanded"); const hs = $("h-symbol"); if (hs) hs.focus(); }); }
 $("save").addEventListener("click", () => {
   const r = resolveSymbolInput($("h-symbol").value);
   if (r.error) { toast(r.error); return; }
