@@ -402,23 +402,22 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   background: radial-gradient(circle at center, rgba(0, 220, 255, .10), rgba(0, 20, 38, .72) 62%, rgba(0, 8, 18, .92));
   border: 1px solid rgba(0, 220, 255, .45);
   box-shadow: 0 0 18px rgba(0, 220, 255, .22), inset 0 0 20px rgba(0, 220, 255, .1);
-  transition: border-color .15s, box-shadow .15s, transform .15s; }
+  cursor: default; transition: none; }
+/* 系統能力展示，非按鈕：無 cursor:pointer、無 hover 浮起 / 發光效果 */
 .orbit-node::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; border: 1px dashed rgba(0, 220, 255, .28); z-index: 1; pointer-events: none; }
 .orbit-node::after { content: ""; position: absolute; inset: 0; border-radius: 50%; z-index: 0; pointer-events: none; opacity: .45;
   background: conic-gradient(from 180deg, rgba(0, 220, 255, .28), transparent 38%, rgba(120, 110, 255, .22), transparent 70%);
   animation: slowSpin 18s linear infinite; }
-.orbit-node:hover { border-color: rgba(0, 235, 255, .9); box-shadow: 0 0 30px rgba(0, 220, 255, .42); transform: translateY(-2px); }
-.orbit-node .n-ico { position: relative; z-index: 2; font-size: 1.7em; filter: drop-shadow(0 0 8px rgba(0, 220, 255, .55)); line-height: 1; }
-.orbit-node b { position: relative; z-index: 2; display: block; max-width: 86%; margin: 3px auto 0; font-size: 1.04em; color: #eaf6ff; line-height: 1.15; word-break: keep-all; }
-.orbit-node small { position: relative; z-index: 2; display: block; max-width: 88%; margin: 0 auto; font-size: .82em; color: #9fc6dd; line-height: 1.2; opacity: .82; word-break: keep-all; }
-/* 節點位置：圍繞中央主圓（左 3 + 右 4）*/
-.node-tw    { left: 6%;  top: 10%; }
-.node-us    { left: 1%;  top: 40%; }
-.node-gold  { left: 6%;  top: 70%; }
-.node-tech  { right: 6%; top: 8%; }
-.node-chip  { right: 1%; top: 34%; }
-.node-fund  { right: 4%; top: 58%; }
-.node-score { right: 12%; top: 80%; }
+.orbit-node .n-ico { position: relative; z-index: 2; font-size: 1.6em; filter: drop-shadow(0 0 8px rgba(0, 220, 255, .55)); line-height: 1; }
+.orbit-node b { position: relative; z-index: 2; display: block; max-width: 90%; margin: 3px auto 0; font-size: 1.02em; color: #eaf6ff; line-height: 1.15; word-break: keep-all; }
+.orbit-node small { position: relative; z-index: 2; display: block; max-width: 92%; margin: 0 auto; font-size: .76em; color: #9fc6dd; line-height: 1.2; opacity: .82; word-break: keep-all; }
+/* 節點位置：左三 + 右三，左右對稱弧形環繞中央 HUD（中間顆最外、上下顆內收）*/
+.node-l1 { left: 7%; top: 15%; }
+.node-l2 { left: 2%; top: 44%; }
+.node-l3 { left: 7%; top: 73%; }
+.node-r1 { right: 7%; top: 15%; }
+.node-r2 { right: 2%; top: 44%; }
+.node-r3 { right: 7%; top: 73%; }
 
 /* 下方狀態列 */
 .stage-status-lines { text-align: center; color: #9fc6dd; font-size: .82rem; line-height: 1.85; }
@@ -504,8 +503,8 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .orbit-dashboard { max-width: 720px; min-height: 430px; }
   .orbit-core { width: clamp(280px, 30vw, 360px); height: clamp(280px, 30vw, 360px); }
   .orbit-node { width: 96px; height: 96px; font-size: 11px; padding: 8px; }
-  .node-tw { left: 2%; top: 11%; } .node-us { left: 0%; top: 42%; } .node-gold { left: 2%; top: 73%; }
-  .node-tech { right: 2%; top: 9%; } .node-chip { right: 0%; top: 38%; } .node-fund { right: 1%; top: 63%; } .node-score { right: 11%; top: 82%; }
+  .node-l1 { left: 2%; top: 13%; } .node-l2 { left: 0%; top: 44%; } .node-l3 { left: 2%; top: 75%; }
+  .node-r1 { right: 2%; top: 13%; } .node-r2 { right: 0%; top: 44%; } .node-r3 { right: 2%; top: 75%; }
   .stage-title { font-size: 1.6rem; }
 }
 .query-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
