@@ -1172,6 +1172,15 @@ $("us-search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("go
 })();
 // 手機版「我的持股」空狀態：點「＋ 加入持股」展開完整表單（桌機本來就顯示完整表單）
 { const ha = $("holdings-add"); if (ha) ha.addEventListener("click", () => { const mh = $("myholdings"); if (mh) mh.classList.add("holdings-expanded"); const hs = $("h-symbol"); if (hs) hs.focus(); }); }
+// 手機版：整張黃金現價工具卡可點開啟黃金分析（桌機維持只由按鈕觸發，行為不變）
+{ const gm = document.querySelector(".goldmini");
+  if (gm) gm.addEventListener("click", (e) => {
+    if (!window.matchMedia("(max-width: 980px)").matches) return;   // 只在手機 / 平板（工具卡版型）
+    if (e.target.closest("a, button")) return;                      // 桌機按鈕自行處理
+    openModal("modal-gold"); ensureGold();
+    requestAnimationFrame(() => { const cv = $("goldBody").querySelector("canvas.kline"); if (cv && cv._redraw) cv._redraw(); });
+  });
+}
 $("save").addEventListener("click", () => {
   const r = resolveSymbolInput($("h-symbol").value);
   if (r.error) { toast(r.error); return; }

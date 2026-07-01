@@ -653,10 +653,11 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   #rightResult            { order: 5; }   /* 基本 / 技術 / 籌碼 / 資料來源 + 結論 */
   #bottomResult           { order: 6; }   /* （目前為空）*/
   .mobile-section-divider { order: 7; }   /* 「延伸資訊」分隔（僅查詢後顯示）*/
-  .aux-tools              { order: 8; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }   /* 輔助工具（黃金現價 + 新聞搜尋，2 欄）*/
+  .aux-tools              { order: 8; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; margin-top: 10px; }   /* 輔助工具（黃金現價 + 新聞搜尋，2 欄）*/
   .riskcard               { order: 9; }
-  .mobile-bottom-spacer   { order: 11; }  /* 底部 safe-area spacer，永遠最後 */
   .bottom-panel  { display: contents; }   /* 讓 #bottomResult 進入單欄流並可排序 */
+  /* 查詢前：空的結果容器不佔位（避免 flex gap 在股市快查與輔助工具之間形成大空白）*/
+  #centerResult:empty, #rightResult:empty, #bottomResult:empty { display: none; }
   /* 「延伸資訊」分隔：只在查詢後（has-result）顯示 */
   .dashboard-shell.has-result .mobile-section-divider { display: flex; align-items: center; gap: 12px; margin: 6px 2px 0; }
   .mobile-section-divider span { color: #9fc6dd; font-size: .9rem; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
@@ -687,28 +688,31 @@ input, textarea, select, [contenteditable] { -webkit-user-select: text; -ms-user
   .hud-status { flex-direction: column; text-align: center; gap: 10px; }
   .hud-status .hud-ring { width: 88px; height: 88px; } .hud-check { font-size: 1.8rem; }
   .hud-status .hud-title { font-size: 1.12rem; } .hud-steps { display: inline-block; text-align: left; font-size: .9rem; }
-  /* 輔助工具 2 欄內容：標題橫跨兩欄、黃金壓縮、新聞改 icon 卡（整卡可點）*/
+  /* 輔助工具：兩張『同級』工具卡（同寬同高、置中、icon + 標題 + 副標）；整卡可點 */
   .aux-tools .aux-title { display: block; grid-column: 1 / -1; margin: 0; font-size: 1.04rem; color: #eaf6ff; }
   .aux-tools .aux-title::before { content: ""; display: inline-block; width: 4px; height: 16px; margin-right: 9px; vertical-align: -2px; border-radius: 2px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
-  .aux-tools .card { width: auto; max-width: none; margin: 0; min-width: 0; }
-  .goldmini { padding: 14px; }
-  .goldmini h2 { font-size: .98rem; }
-  .goldmini .gold-visual { display: none !important; }
-  .goldmini .gm-price { font-size: 1.5rem; line-height: 1.1; }
+  .aux-tools .card { width: auto; max-width: none; margin: 0; min-width: 0; min-height: 150px; padding: 16px 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; cursor: pointer; }
+  /* 黃金現價工具卡：標題 + 價格(不過大) + 副標，整卡可點；手機不顯示按鈕與金條裝飾 */
+  .goldmini h2 { font-size: .96rem; margin: 0; }
+  .goldmini h2::before { display: none; }
+  .goldmini #goldMiniBody { margin: 0; }
+  .goldmini .gm-price { font-size: clamp(22px, 7.2vw, 30px); line-height: 1.1; }
   .goldmini .gm-sub { font-size: .72rem; }
-  .goldmini #goldMiniBody { margin: 6px 0 8px; }
-  .goldmini button { width: 100%; min-height: 42px; padding: 0 8px; font-size: 13px; }
-  .news-card.aux-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; padding: 14px; cursor: pointer; }
-  .news-card.aux-card .aux-ico { font-size: 1.8rem; filter: drop-shadow(0 0 8px rgba(0, 200, 255, .5)); }
-  .news-card.aux-card b { font-size: 1rem; color: #eaf6ff; }
-  .news-card.aux-card small { font-size: .76rem; color: var(--muted); }
+  .goldmini .gold-visual { display: none !important; }
+  .goldmini > button { display: none; }
+  /* 新聞搜尋工具卡：icon + 標題 + 副標（與黃金卡等權重）*/
+  .news-card.aux-card .aux-ico { font-size: 1.7rem; filter: drop-shadow(0 0 8px rgba(0, 200, 255, .5)); }
+  .news-card.aux-card b { font-size: .96rem; color: #eaf6ff; }
+  .news-card.aux-card small { font-size: .72rem; color: var(--muted); }
 }
 
 /* ===== 手機 ≤720：safe-area / 股市快查 segmented / 我的持股空狀態 / 黃金壓縮 ===== */
 @media (max-width: 720px) {
-  /* iPhone Safari 底部工具列遮擋：只用單一 spacer（約 72px + safe-area），不在多層重複加 padding，避免整頁大空白 */
+  /* iPhone Safari 底部工具列：不在 body/main/shell/dashboard-shell 多層加 padding；只用單一 spacer（置於 footer 之後）*/
   html, body { min-height: 100%; }
-  .mobile-bottom-spacer { display: block; width: 100%; height: calc(72px + env(safe-area-inset-bottom)); }
+  body, main, .shell, .dashboard-shell { padding-bottom: 0 !important; }
+  .mobile-bottom-spacer { display: block; width: 100%; height: calc(84px + env(safe-area-inset-bottom)); }
   /* 首頁要短：頂部大標題框與 appbar 重複，手機隱藏（標題改由 appbar 呈現），讓第一屏直接看到持股 + 快查 */
   .top-title { display: none; }
   .card, .panel, .section, .goldmini, .riskcard, .news-card { width: 100%; max-width: 100%; box-sizing: border-box; }
